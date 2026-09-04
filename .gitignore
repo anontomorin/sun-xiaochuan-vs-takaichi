@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# 部署/构建临时文件
+node_modules/
+dist/
+.cache/
