@@ -1963,21 +1963,6 @@ body::after {
   gap: 14px;
   margin: 26px 0 8px;
 }
-.home-play {
-  font-size: 22px;
-  padding: 15px 42px;
-  animation: play-glow 1.9s ease-in-out infinite;
-}
-@keyframes play-glow {
-  0%, 100% {
-    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18), 0 10px 22px rgba(245, 158, 11, 0.35);
-    transform: translateY(0);
-  }
-  50% {
-    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18), 0 12px 34px rgba(245, 158, 11, 0.62);
-    transform: translateY(-3px) scale(1.03);
-  }
-}
 .home-foot {
   margin-top: 14px;
   font-size: 12px;
@@ -2038,7 +2023,6 @@ body::after {
   .logo-vs { font-size: 26px; }
   .home-floaty { font-size: 32px; }
   .home-inner { padding: 22px 14px 18px; }
-  .home-play { font-size: 19px; padding: 13px 28px; }
   .home-features span { font-size: 11.5px; padding: 4px 10px; }
   #screen-home { min-height: 66vh; }
 }
