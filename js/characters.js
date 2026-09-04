@@ -17,7 +17,7 @@
       photo: 'assets/img/sun_xiaochuan.png',
       tagline: '嘴炮输出 · 网络梗 · 爆发',
       maxHp: 500,
-      attack: 35,
+      attack: 39,
       defense: 20,
       speed: 35,
       deckSpec: [
@@ -41,8 +41,8 @@
       emoji: '👩‍💼',
       photo: 'assets/img/takaichi_sanae.png',
       tagline: '政治强人 · 防守 · 经济攻击',
-      maxHp: 550,
-      attack: 30,
+      maxHp: 560,
+      attack: 32,
       defense: 30,
       speed: 30,
       deckSpec: [

@@ -27,12 +27,12 @@
 
   // 演出节奏（毫秒，仅真人游玩时生效；simMode 下自动跳过，不影响测试速度）
   const RHYTHM = {
-    thinkFirst: 950,   // AI 接手时的“思考”停顿
-    thinkOp: 420,      // 每次决策后的短暂思考
-    reveal: 460,       // 亮牌展示时长
-    recover: 320,      // 一次操作后的收招停顿
-    item: 420,         // 道具操作停顿
-    endTurn: 650       // 结束回合前的停顿
+    thinkFirst: 780,   // AI 接手时的“思考”停顿
+    thinkOp: 360,      // 每次决策后的短暂思考
+    reveal: 400,       // 亮牌展示时长
+    recover: 280,      // 一次操作后的收招停顿
+    item: 360,         // 道具操作停顿
+    endTurn: 540       // 结束回合前的停顿
   };
 
   function jitter(base) {
