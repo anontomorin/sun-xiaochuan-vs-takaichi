@@ -71,7 +71,8 @@
     }
     UI.showBattleScreen();
     Game.restart();
-    Game.startBattle(selectedCharId);
+    const auto = $('cb-auto') ? $('cb-auto').checked : false;
+    Game.startBattle(selectedCharId, { auto: auto });
   }
 
   // ------------------------------------------------------------------
@@ -225,6 +226,25 @@
       resetSelectUI();
       UI.showHomeScreen();
       UI.sound.play('click');
+    });
+
+    // 自动战斗托管开关
+    $('btn-auto').addEventListener('click', function () {
+      if (Game.isOver()) return;
+      const on = !Game.state.playerAuto;
+      Game.setPlayerAuto(on);
+      UI.sound.play('click');
+      UI.refresh();
+    });
+
+    // 托管/观战速度 1x / 2x / 4x 循环
+    $('btn-speed').addEventListener('click', function () {
+      if (Game.isOver()) return;
+      const cur = Game.state.animSpeed || 1;
+      const next = cur >= 4 ? 1 : cur * 2;
+      Game.state.animSpeed = next;
+      UI.sound.play('click');
+      UI.refresh();
     });
 
     $('btn-start').addEventListener('click', startBattle);

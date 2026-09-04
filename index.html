@@ -37,7 +37,7 @@
           <button id="btn-play-now" class="btn btn-big btn-primary home-play">🎮 开始游戏</button>
           <button id="btn-dev-statement" class="btn btn-big btn-ghost">📜 开发者声明</button>
         </div>
-        <p class="home-foot">v1.3 · 作者 anontomorin · 纯原生 HTML5 / CSS3 / JavaScript · 双击 index.html 即可运行 · 无需联网</p>
+        <p class="home-foot">v1.4 · 作者 anontomorin · 纯原生 HTML5 / CSS3 / JavaScript · 双击 index.html 即可运行 · 无需联网</p>
       </div>
     </section>
 
@@ -50,6 +50,10 @@
       </header>
       <div id="char-cards" class="char-cards"></div>
       <p id="select-hint" class="select-hint">👆 点击角色卡选择你要使用的角色</p>
+      <label class="auto-check" for="cb-auto">
+        <input type="checkbox" id="cb-auto">
+        <span>🤖 自动战斗（AI 托管你的角色，可随时取消）</span>
+      </label>
       <button id="btn-start" class="btn btn-big btn-primary" disabled>⚔️ 开始战斗</button>
       <button id="btn-rules" class="btn btn-ghost">📜 玩法说明</button>
     </section>
@@ -160,6 +164,11 @@
         <button id="btn-play" class="btn btn-action btn-play" disabled>🗡️ 出牌</button>
         <button id="btn-end" class="btn btn-action btn-end" disabled>⏩ 结束回合</button>
       </div>
+      <div class="auto-bar">
+        <button id="btn-auto" class="btn-auto" title="开启后你的回合由 AI 代打">🤖 自动战斗</button>
+        <button id="btn-speed" class="btn-auto" title="托管/观战速度">⏩ 1x</button>
+        <span class="auto-hint">托管后你的回合由 AI 代打；取消后下一回合恢复手动</span>
+      </div>
     </section>
   </div>
 
@@ -206,6 +215,8 @@
         <p><b>弃牌换 AP：</b>每回合 1 次，弃 1 张手牌 +1 AP。</p>
         <p><b>道具：</b>开局各带 2 个（回血红包 / 净化喷雾 / 能量咖啡），使用后立即结束回合；「狗粉丝围攻」状态禁用道具。</p>
         <p><b>状态：</b>点状态图标查看效果与剩余回合。同类状态不叠加，新状态覆盖旧状态。</p>
+        <p><b>自动战斗：</b>选角页勾选或对战页点「🤖 自动战斗」，你的回合交由 AI 托管，可随时取消；
+          「⏩」可在 1x / 2x / 4x 间切换观战速度。</p>
         <p><b>暴击：</b>所有攻击 5% 暴击造成 1.5 倍；1 费攻击牌暴击额外抽 1 张。</p>
         <p><b>速度：</b>速度快者先手；相同则玩家先手。</p>
       </div>
@@ -235,7 +246,7 @@
           卡牌与数值全部为原创设计。代码仅用于学习交流。</p>
         <h4>🧾 免责声明</h4>
         <p>本游戏仅供娱乐，请理性娱乐、尊重他人。作者不对因游玩本游戏产生的任何后果负责。</p>
-        <p class="dev-sign">✍️ 作者 anontomorin ｜ 版本 v1.3 ｜ 技术栈：HTML5 + CSS3 + JavaScript ES6+ ｜ 运行方式：双击 index.html</p>
+        <p class="dev-sign">✍️ 作者 anontomorin ｜ 版本 v1.4 ｜ 技术栈：HTML5 + CSS3 + JavaScript ES6+ ｜ 运行方式：双击 index.html</p>
       </div>
       <div class="modal-buttons">
         <button id="btn-dev-close" class="btn btn-primary">知道了</button>

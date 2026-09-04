@@ -47,6 +47,8 @@
     overflowResume: 'action', // 超限弃牌完成后：'action' | 'endTurn' | 'enterAction'
     abstractInProgress: false, // 抽象化自动行为执行中
     abstractTimer: null,       // 抽象化行为的延时句柄（重开/结束时取消）
+    playerAuto: false,         // 自动战斗：玩家侧由 AI 托管
+    animSpeed: 1,              // 观战/托管速度倍率（1/2/4）
     simMode: false             // 测试模式：玩家也由 AI 接管
   };
 
@@ -286,7 +288,7 @@
     const over = actor.hand.length - HAND_LIMIT;
     if (over <= 0) return;
 
-    if (key === 'player' && !state.simMode && !state.abstractInProgress &&
+    if (key === 'player' && !state.simMode && !state.playerAuto && !state.abstractInProgress &&
         (state.phase === PHASE.ACTION || state.phase === PHASE.TURN_START)) {
       // 玩家手动选择弃牌
       state.phase = PHASE.OVERFLOW;
@@ -491,7 +493,8 @@
   // ------------------------------------------------------------------
   // 回合流程
   // ------------------------------------------------------------------
-  function startBattle(playerCharId) {
+  function startBattle(playerCharId, opts) {
+    opts = opts || {};
     const enemyCharId = playerCharId === 'sun_xiaochuan' ? 'takaichi_sanae' : 'sun_xiaochuan';
     state.player = createActor('player', playerCharId);
     state.enemy = createActor('enemy', enemyCharId);
@@ -504,6 +507,8 @@
     state.abstractInProgress = false;
     if (state.abstractTimer) clearTimeout(state.abstractTimer);
     state.abstractTimer = null;
+    state.playerAuto = !!opts.auto;
+    state.animSpeed = Math.max(1, opts.speed || 1);
     state.phase = PHASE.TURN_START;
 
     log('战斗开始！' + state.player.name + ' VS ' + state.enemy.name);
@@ -584,32 +589,53 @@
       return;
     }
 
-    if (key === 'enemy' || state.simMode) {
-      state.isProcessing = true;
-      refreshUI();
-      if (global.AI && typeof AI.startTurn === 'function') {
-        AI.startTurn(key).then(
-          function () {
-            state.isProcessing = false;
-            refreshUI();
-          },
-          function () {
-            // 兜底：即使 AI 异常也不能让回合卡死
-            state.isProcessing = false;
-            if (state.phase === PHASE.ACTION && state.currentActorKey === key && !isOver()) {
-              endTurn(key);
-            }
-            refreshUI();
-          }
-        );
-      } else {
-        endTurn(key);
-      }
+    // 敌人 / 测试模式 / 玩家自动托管 → 全部交给 AI
+    if (key === 'enemy' || state.simMode || (key === 'player' && state.playerAuto)) {
+      runAITurn(key);
       return;
     }
 
     // 玩家手动回合
     state.isProcessing = false;
+    refreshUI();
+  }
+
+  // 让 AI 托管一个真人角色的当前回合（带异常兜底）
+  function runAITurn(key) {
+    if (isOver()) return;
+    state.isProcessing = true;
+    refreshUI();
+    if (global.AI && typeof AI.startTurn === 'function') {
+      AI.startTurn(key).then(
+        function () {
+          state.isProcessing = false;
+          refreshUI();
+        },
+        function () {
+          // 兜底：即使 AI 异常也不能让回合卡死
+          state.isProcessing = false;
+          if (state.phase === PHASE.ACTION && state.currentActorKey === key && !isOver()) {
+            endTurn(key);
+          }
+          refreshUI();
+        }
+      );
+    } else {
+      state.isProcessing = false;
+      endTurn(key);
+    }
+  }
+
+  // 开关玩家托管；开启时若正处于玩家行动阶段则立即接管
+  function setPlayerAuto(on) {
+    state.playerAuto = !!on;
+    if (on && !state.simMode &&
+        state.phase === PHASE.ACTION &&
+        state.currentActorKey === 'player' &&
+        !state.isProcessing && !isOver()) {
+      runAITurn('player');
+      return;
+    }
     refreshUI();
   }
 
@@ -655,7 +681,7 @@
       }
       state.isProcessing = false;
       refreshUI();
-    }, state.simMode ? 0 : 350);
+    }, state.simMode ? 0 : Math.max(60, Math.round(350 / Math.max(1, state.animSpeed))));
   }
 
   // 结束当前角色的回合
@@ -850,7 +876,11 @@
       enterActionPhase(state.currentActorKey);
     } else {
       state.phase = PHASE.ACTION;
-      refreshUI();
+      if (state.playerAuto && !state.simMode && !isOver()) {
+        runAITurn(state.currentActorKey); // 托管中：弃牌完成后继续自动出牌
+      } else {
+        refreshUI();
+      }
     }
   }
 
@@ -885,6 +915,8 @@
     state.abstractInProgress = false;
     if (state.abstractTimer) clearTimeout(state.abstractTimer);
     state.abstractTimer = null;
+    state.playerAuto = false;
+    state.animSpeed = 1;
   }
 
   // 公开 API（卡片效果通过 GameApi 访问结算函数）
@@ -937,6 +969,7 @@
     playerSelectCard: playerSelectCard,
     playerPlaySelected: playerPlaySelected,
     attemptPlayCard: attemptPlayCard,
+    setPlayerAuto: setPlayerAuto,
     playerDiscardForAp: playerDiscardForAp,
     aiDiscardForAp: aiDiscardForAp,
     useItem: useItem,

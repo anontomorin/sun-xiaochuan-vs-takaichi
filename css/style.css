@@ -760,6 +760,65 @@ button:disabled {
   padding: 2px 0 8px;
 }
 
+/* 自动战斗 */
+.auto-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 8px 14px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4b4758;
+  cursor: pointer;
+  user-select: none;
+}
+.auto-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #f59e0b;
+  cursor: pointer;
+}
+
+.auto-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 0 4px;
+}
+.btn-auto {
+  border: 2px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.82);
+  color: #4b5563;
+  border-radius: 999px;
+  padding: 6px 15px;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.1s ease, background 0.15s;
+}
+.btn-auto:hover { transform: translateY(-2px); }
+.btn-auto.on {
+  background: linear-gradient(180deg, #a5f3fc, #06b6d4);
+  color: #164e63;
+  border-color: #22d3ee;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.25);
+}
+.auto-hint {
+  font-size: 11px;
+  color: #8d8499;
+}
+
+@media (max-width: 480px) {
+  .auto-hint { display: none; }
+  .auto-bar { gap: 6px; }
+}
+
 /* --------------------------------------------------------------------------
    弹层
    -------------------------------------------------------------------------- */

@@ -39,6 +39,12 @@
     return base + Math.random() * 220;
   }
 
+  // 按观战/托管速度倍率缩放演出停顿（animSpeed: 1/2/4…）
+  function speeded(ms) {
+    const sp = (Game.state && Game.state.animSpeed) || 1;
+    return Math.max(0, ms / Math.max(1, sp));
+  }
+
   function estMult(cardDef, foeKey) {
     let m = EST_MULT[cardDef.id] || 0;
     if (cardDef.id === 'ultimate_rap' && Game.hasStatus(foeKey, 'abstract')) m = 4.0;
@@ -247,7 +253,7 @@
     if (G.state.simMode) {
       await Promise.resolve();
     } else {
-      await sleep(RHYTHM.thinkFirst); // AI 接手：先“思考”一会儿
+      await sleep(speeded(RHYTHM.thinkFirst)); // AI 接手：先“思考”一会儿
     }
 
     let ops = 0;
@@ -269,14 +275,14 @@
             const ci = itemIndex(key, COFFEE_ITEM);
             if (ci >= 0 && ai.ap <= 6) {
               ops += 1;
-              if (!G.state.simMode) await sleep(jitter(RHYTHM.item));
+              if (!G.state.simMode) await sleep(speeded(jitter(RHYTHM.item)));
               execute(key, { type: 'item', index: ci });
               endedByItem = true;
             }
           }
           if (!endedByItem && !ai.discardUsedThisTurn && ai.hand.length >= 3 && Math.random() < 0.2) {
             ops += 1;
-            if (!G.state.simMode) await sleep(jitter(RHYTHM.thinkOp));
+            if (!G.state.simMode) await sleep(speeded(jitter(RHYTHM.thinkOp)));
             const ri = Math.floor(Math.random() * ai.hand.length);
             execute(key, { type: 'discardForAp', index: ri });
             continue; // 多获得 1 AP 后再试一轮
@@ -294,26 +300,26 @@
         if (action.type === 'play') {
           const card = G.state[key].hand[action.index];
           if (firstAction) {
-            await sleep(jitter(420));       // 首张牌前的掂量
+            await sleep(speeded(jitter(420))); // 首张牌前的掂量
             firstAction = false;
           } else {
-            await sleep(jitter(300));
+            await sleep(speeded(jitter(300)));
           }
           // 敌方头像旁亮出将要打出的牌
           if (card && global.UI && typeof UI.castReveal === 'function') {
             UI.castReveal(key, card.def);
           }
-          await sleep(jitter(RHYTHM.reveal));
+          await sleep(speeded(jitter(RHYTHM.reveal)));
           execute(key, action);
-          await sleep(jitter(RHYTHM.recover));
+          await sleep(speeded(jitter(RHYTHM.recover)));
         } else if (action.type === 'item') {
-          await sleep(jitter(RHYTHM.item));
+          await sleep(speeded(jitter(RHYTHM.item)));
           execute(key, action);
-          await sleep(260);
+          await sleep(speeded(260));
         } else {
-          await sleep(jitter(RHYTHM.thinkOp));
+          await sleep(speeded(jitter(RHYTHM.thinkOp)));
           execute(key, action);
-          await sleep(200);
+          await sleep(speeded(200));
         }
       }
     } catch (err) {
@@ -326,7 +332,7 @@
       if (!G.isOver() &&
           G.state.phase === G.PHASE.ACTION &&
           G.state.currentActorKey === key) {
-        if (!G.state.simMode) await sleep(jitter(RHYTHM.endTurn));
+        if (!G.state.simMode) await sleep(speeded(jitter(RHYTHM.endTurn)));
         G.endTurn(key);
       }
       if (global.UI && typeof UI.refresh === 'function') UI.refresh();

@@ -37,6 +37,8 @@
       btnDiscardAp: $('btn-discard-ap'),
       btnPlay: $('btn-play'),
       btnEnd: $('btn-end'),
+      btnAuto: $('btn-auto'),
+      btnSpeed: $('btn-speed'),
       cardDetail: $('card-detail'),
       detailCard: $('detail-card'),
       detailInfo: $('detail-info'),
@@ -233,6 +235,10 @@
       hint = '🌀 ' + actor.name + ' 陷入抽象化，正在发疯…';
     } else if (actor && actor.key === 'enemy') {
       hint = '🤖 AI（' + actor.name + '）思考中…';
+    } else if (actor && actor.key === 'player' && G.state.playerAuto) {
+      hint = '🤖 自动托管中…（点「自动战斗」可取消，下一回合恢复手动）';
+    } else if (actor && actor.key === 'player' && G.state.isProcessing) {
+      hint = '🤖 托管正在收尾…（下一回合恢复手动）';
     } else if (actor) {
       hint = '🎮 你的回合：点击手牌选择，再点「出牌」';
     }
@@ -352,6 +358,21 @@
     refs.btnPlay.textContent = playOk ? '🗡️ 出牌' : '🗡️ 出牌（AP不足）';
   }
 
+  // 自动战斗 / 速度 按钮状态
+  function updateAutoBar() {
+    const G = Game;
+    if (!refs.btnAuto || !G.state.player) return;
+    const auto = !!G.state.playerAuto;
+    const finishing = !auto && !G.isOver() &&
+      G.state.currentActorKey === 'player' && G.state.isProcessing &&
+      G.state.phase === G.PHASE.ACTION;
+    refs.btnAuto.textContent = auto ? '🤖 托管中' : (finishing ? '⌛ 本回合收尾' : '🤖 自动战斗');
+    refs.btnAuto.classList.toggle('on', auto);
+    refs.btnSpeed.textContent = '⏩ ' + (G.state.animSpeed || 1) + 'x';
+    refs.btnSpeed.disabled = G.isOver();
+    refs.btnAuto.disabled = G.isOver();
+  }
+
   function renderLog() {
     const G = Game;
     const items = G.state.logs.map(function (line) {
@@ -381,6 +402,7 @@
     renderItems();
     renderButtons();
     renderLog();
+    updateAutoBar();
     syncOverlay();
   }
 
