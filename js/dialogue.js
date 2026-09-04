@@ -139,21 +139,26 @@
   }
 
   function renderSceneCard(text) {
-    els.text.classList.remove('full');
-    els.text.textContent = '';
-    els.speaker.textContent = '—— 场景 ——';
-    els.speaker.className = 'dlg-speaker scene';
-    els.portrait.className = 'dlg-portrait scene';
-    els.portrait.innerHTML = '';
-    els.scene.textContent = text;
-    els.scene.classList.remove('hide');
-    void els.scene.offsetWidth;
-    els.scene.classList.add('pop');
-    els.next.classList.add('hidden');
-    current.skipTimer = setTimeout(function () {
-      els.scene.classList.add('hide');
-      nextLine();
-    }, 1500);
+    try {
+      els.text.classList.remove('full');
+      els.text.textContent = '';
+      els.speaker.textContent = '—— 场景 ——';
+      els.speaker.className = 'dlg-speaker scene';
+      els.portrait.className = 'dlg-portrait scene';
+      els.portrait.innerHTML = '';
+      els.scene.textContent = text;
+      els.scene.classList.remove('hide');
+      void els.scene.offsetWidth;
+      els.scene.classList.add('pop');
+      els.next.classList.add('hidden');
+      current.skipTimer = setTimeout(function () {
+        els.scene.classList.add('hide');
+        nextLine();
+      }, 1500);
+    } catch (err) {
+      if (global.console) console.error('场景演出异常:', err);
+      current.skipTimer = setTimeout(function () { nextLine(); }, 300);
+    }
   }
 
   function renderFx(kind, payload) {
@@ -163,38 +168,48 @@
   }
 
   function typeText(text) {
-    els.text.textContent = '';
-    els.text.classList.remove('full');
-    els.next.classList.add('hidden');
-    let i = 0;
-    typeTimer = setInterval(function () {
-      i += 1;
-      els.text.textContent = text.slice(0, i);
-      if (i >= text.length) { finishTyping(); }
-    }, typeSpeed);
+    try {
+      els.text.textContent = '';
+      els.text.classList.remove('full');
+      els.next.classList.add('hidden');
+      let i = 0;
+      typeTimer = setInterval(function () {
+        i += 1;
+        els.text.textContent = text.slice(0, i);
+        if (i >= text.length) { finishTyping(); }
+      }, typeSpeed);
+    } catch (err) {
+      if (global.console) console.error('打字机异常:', err);
+      finishTyping();
+    }
   }
 
   function renderItem(item) {
-    if (current.skipTimer) { clearTimeout(current.skipTimer); current.skipTimer = null; }
-    els.scene.classList.add('hide');
-    if (item && item.scene !== undefined) { renderSceneCard(item.scene); return; }
-    if (item && item.fx) { renderFx(item.fx, item); return; }
+    try {
+      if (current.skipTimer) { clearTimeout(current.skipTimer); current.skipTimer = null; }
+      els.scene.classList.add('hide');
+      if (item && item.scene !== undefined) { renderSceneCard(item.scene); return; }
+      if (item && item.fx) { renderFx(item.fx, item); return; }
 
-    const who = item[0];
-    const text = item[1];
-    const names = (current.opts && current.opts.names) || DEFAULT_NAMES;
-    const icons = (current.opts && current.opts.icons) || DEFAULT_ICONS;
-    const boss = current.opts && current.opts.boss;
-    const name = names[who] || who;
-    const icon = (who === 'enemy' && current.opts && current.opts.enemyIcon)
-      ? current.opts.enemyIcon
-      : (icons[who] || '💬');
+      const who = item[0];
+      const text = String(item[1] === undefined ? '' : item[1]);
+      const names = (current.opts && current.opts.names) || DEFAULT_NAMES;
+      const icons = (current.opts && current.opts.icons) || DEFAULT_ICONS;
+      const boss = current.opts && current.opts.boss;
+      const name = names[who] || who;
+      const icon = (who === 'enemy' && current.opts && current.opts.enemyIcon)
+        ? current.opts.enemyIcon
+        : (icons[who] || '💬');
 
-    els.speaker.textContent = name;
-    els.speaker.className = 'dlg-speaker ' + who + (boss ? ' boss' : '');
-    els.portrait.className = 'dlg-portrait ' + who + (boss ? ' boss' : '');
-    els.portrait.innerHTML = '<span class="dp-icon">' + icon + '</span>';
-    typeText(text);
+      els.speaker.textContent = name;
+      els.speaker.className = 'dlg-speaker ' + who + (boss ? ' boss' : '');
+      els.portrait.className = 'dlg-portrait ' + who + (boss ? ' boss' : '');
+      els.portrait.innerHTML = '<span class="dp-icon">' + icon + '</span>';
+      typeText(text);
+    } catch (err) {
+      if (global.console) console.error('对白条目异常，自动跳过:', err);
+      current.skipTimer = setTimeout(function () { nextLine(); }, 200);
+    }
   }
 
   function endSequence(skipped) {

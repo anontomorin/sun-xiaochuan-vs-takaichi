@@ -194,6 +194,20 @@
     });
   }
 
+  // 全局错误上屏：任何运行异常都会以 Toast 显示，方便定位与自愈
+  function bindErrorTrap() {
+    if (!global.addEventListener) return;
+    global.addEventListener('error', function (ev) {
+      if (UI && typeof UI.toast === 'function') {
+        UI.toast('⚠️ 运行错误：' + ((ev && ev.message) || '未知错误'), 6000);
+      }
+    });
+    global.addEventListener('unhandledrejection', function (ev) {
+      const m = (ev && ev.reason && ev.reason.message) || '异步错误';
+      if (UI && typeof UI.toast === 'function') UI.toast('⚠️ ' + m, 6000);
+    });
+  }
+
   // ------------------------------------------------------------------
   // 战斗交互（自由对战 + 故事战斗共用）
   // ------------------------------------------------------------------
@@ -378,6 +392,7 @@
     bindHomeEvents();
     bindCodexEvents();
     bindSettingsEvents();
+    bindErrorTrap();
     UI.showHomeScreen();
   }
 

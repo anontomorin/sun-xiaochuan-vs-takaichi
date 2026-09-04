@@ -51,6 +51,14 @@
     box.addEventListener('click', function (e) { if (e.target === box) box.remove(); });
   }
 
+  function errFallback(fn) {
+    return function (err) {
+      if (global.console) console.error('故事流程异常（已尝试恢复）:', err);
+      if (global.UI && typeof UI.toast === 'function') UI.toast('⚠️ 剧情异常，已自动跳过', 4000);
+      try { fn(); } catch (e2) { /* ignore */ }
+    };
+  }
+
   function speech(who, text) {
     // 战斗中敌方/系统台词反馈（尽量沉浸）
     const v = G.visual;
@@ -153,10 +161,12 @@
   function startPrologue() {
     const boss = false;
     const runSeq = function () {
-      return StoryDialogue.play(D.PROLOGUE, { boss: boss }).then(function () {
+      const p = StoryDialogue.play(D.PROLOGUE, { boss: boss }).then(function () {
         if (Story.testMode) return;
         showMap();
       });
+      p.catch(errFallback(function () { showMap(); }));
+      return p;
     };
     if (Story.testMode) { showMap(); return; }
     runSeq();
@@ -233,7 +243,8 @@
     if (Story.testMode) { goBattle(); return; }
     hideMainScreens();
     StoryDialogue.play(introSeq, { boss: isBoss, names: names, icons: icons, onSkip: goBattle })
-      .then(function (r) { if (!r.skipped) goBattle(); });
+      .then(function (r) { if (!r.skipped) goBattle(); })
+      .catch(errFallback(goBattle));
   }
 
   function startBattle() {
@@ -428,7 +439,8 @@
       rewardFlow();
     };
     StoryDialogue.play(seq, { boss: stage.type === 'boss' || stage.type === 'finalBoss', names: names, icons: icons })
-      .then(function () { next(); });
+      .then(function () { next(); })
+      .catch(errFallback(next));
   }
 
   function afterVictorySync() {
@@ -498,13 +510,14 @@
         ? [['sys', '获得被动：' + D.PASSIVES[roll.id].name + '！']]
         : [['sys', '这次没有获得额外被动……']];
       if (Story.testMode) { advance(); return; }
-      showRewardCard(rw, got ? D.PASSIVES[roll.id] : null).then(function () {
-        return StoryDialogue.play(line, { names: names, icons: icons });
-      }).then(function () { advance(); });
+      showRewardCard(rw, got ? D.PASSIVES[roll.id] : null)
+        .then(function () { return StoryDialogue.play(line, { names: names, icons: icons }); })
+        .then(function () { advance(); })
+        .catch(errFallback(advance));
       return;
     }
     if (Story.testMode) { advance(); return; }
-    showRewardCard(rw, null).then(function () { advance(); });
+    showRewardCard(rw, null).then(function () { advance(); }).catch(errFallback(advance));
   }
 
   function applyRewardOnly(stage) {
@@ -538,7 +551,9 @@
       ov.querySelector('[data-ok]').addEventListener('click', function () {
         ov.remove();
         if (lines.length && !Story.testMode) {
-          StoryDialogue.play(lines, { names: names, icons: icons }).then(function () { resolve(); });
+          StoryDialogue.play(lines, { names: names, icons: icons })
+            .then(function () { resolve(); })
+            .catch(function () { resolve(); });
         } else { resolve(); }
       });
     });
@@ -562,7 +577,9 @@
         const names = { sun: '孙笑川', sys: '系统' };
         const icons = { sun: '😎', sys: '🖥️' };
         if (Story.testMode) { advance(); return; }
-        StoryDialogue.play(c.lines || [], { names: names, icons: icons }).then(function () { advance(); });
+        StoryDialogue.play(c.lines || [], { names: names, icons: icons })
+          .then(function () { advance(); })
+          .catch(errFallback(advance));
       });
     });
   }
@@ -592,7 +609,9 @@
         const names = { sun: '孙笑川', sys: '系统' };
         const icons = { sun: '😎', sys: '🖥️' };
         if (Story.testMode) { advance(); return; }
-        StoryDialogue.play(c.lines || [], { names: names, icons: icons }).then(function () { advance(); });
+        StoryDialogue.play(c.lines || [], { names: names, icons: icons })
+          .then(function () { advance(); })
+          .catch(errFallback(advance));
       });
     });
   }
@@ -618,9 +637,9 @@
     if (Story.testMode) { Story.testDone = true; return; }
     const names = { sun: '孙笑川', sys: '系统' };
     const icons = { sun: '😎', sys: '🖥️' };
-    StoryDialogue.play(D.ENDING, { names: names, icons: icons }).then(function () {
-      showEndingScreen(false);
-    });
+    StoryDialogue.play(D.ENDING, { names: names, icons: icons })
+      .then(function () { showEndingScreen(false); })
+      .catch(errFallback(function () { showEndingScreen(false); }));
   }
 
   function showEndingScreen(archived) {
@@ -654,9 +673,9 @@
       const names = { sun: '孙笑川', sys: '系统' };
       const icons = { sun: '😎', sys: '🖥️' };
       if (Story.testMode) { advance(); return; }
-      StoryDialogue.play(stage.lines, { names: names, icons: icons }).then(function () {
-        run.idx += 1; save(); Story.enter(); showMap();
-      });
+      StoryDialogue.play(stage.lines, { names: names, icons: icons })
+        .then(function () { run.idx += 1; save(); Story.enter(); showMap(); })
+        .catch(errFallback(function () { run.idx += 1; save(); Story.enter(); showMap(); }));
       return;
     }
     // reward（选择关）
@@ -673,9 +692,12 @@
     const names = { sun: '孙笑川', sys: '系统' };
     const icons = { sun: '😎', sys: '🖥️' };
     const seq = [{ scene: stage.title }, { scene: stage.scene }].concat(intro);
-    StoryDialogue.play(seq, { names: names, icons: icons }).then(function () {
-      showChoice(stage.reward);
-    });
+    StoryDialogue.play(seq, { names: names, icons: icons })
+      .then(function () { showChoice(stage.reward); })
+      .catch(errFallback(function () {
+        // 兜底：默认选强化并推进
+        run.attack += 5; run.defense += 5; save(); advance();
+      }));
   }
 
   // 供无头自动通关测试：返回是否通关
