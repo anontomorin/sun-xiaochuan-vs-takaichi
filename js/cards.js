@@ -54,6 +54,31 @@
     desc: '速度-25%，影响每轮谁先出手。'
   });
   defStatus({
+    id: 'shouwa_power', name: '昭和之声', icon: '📻', kind: 'buff', duration: 2,
+    category: 'attack_up', mods: { attack: 1.5 },
+    desc: '攻击力 +50%。'
+  });
+  defStatus({
+    id: 'story_fury', name: '战意', icon: '🔥', kind: 'buff', duration: 2,
+    category: 'attack_up', mods: { attack: 1.3 },
+    desc: '攻击力 +30%。'
+  });
+  defStatus({
+    id: 'story_might', name: '执念增幅', icon: '🚨', kind: 'buff', duration: 2,
+    category: 'attack_up', mods: { attack: 1.6 },
+    desc: '攻击力 +60%。'
+  });
+  defStatus({
+    id: 'story_guard', name: '坚守', icon: '🛡️', kind: 'buff', duration: 2,
+    category: 'defense_up', mods: { defense: 1.3 },
+    desc: '防御力 +30%。'
+  });
+  defStatus({
+    id: 'media_press', name: '舆论压制', icon: '📺', kind: 'negative', duration: 2,
+    category: 'attack_down', mods: { attack: 0.8 },
+    desc: '攻击力 -20%（对应“命中/舆论”类削弱）。'
+  });
+  defStatus({
     id: 'cyber_storm', name: '网暴风暴', icon: '🌊', kind: 'negative', duration: 2,
     mods: { incoming: 1.3 },
     desc: '受到伤害 +30%。'
@@ -322,6 +347,14 @@
     effect: function (G, me) {
       G.dealPhysical(me, G.foeKey(me), 0.3);
       G.applyStatus(G.foeKey(me), 'speed_down', 2);
+    }
+  });
+
+  defCard({
+    id: 'shouwa_card', name: '昭和', cost: 1, type: 'special', count: 1,
+    desc: '攻击力 +50%（2回合）。',
+    effect: function (G, me) {
+      G.applyStatus(me, 'shouwa_power', 2);
     }
   });
 

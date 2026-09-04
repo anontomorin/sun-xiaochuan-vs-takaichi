@@ -51,6 +51,11 @@
     abstractTimer: null,       // 抽象化行为的延时句柄（重开/结束时取消）
     playerAuto: false,         // 自动战斗：玩家侧由 AI 托管
     animSpeed: 1,              // 观战/托管速度倍率（1/2/4）
+    storyActive: false,        // 故事模式战斗（Boss/敌人为脚本行动）
+    storyScale: 1.35,          // 故事模式伤害标度（数值池较小，与自由对战解耦）
+    storyHandProvider: null,   // 故事敌人：每回合提供技能手牌
+    storyEnemyDriver: null,    // 故事敌人：回合行动驱动（Boss AI）
+    storyHooks: null,          // 故事钩子：回合开始/结束/轮结束/战斗结束
     simMode: false             // 测试模式：玩家也由 AI 接管
   };
 
@@ -104,6 +109,20 @@
       if (!def) return;
       for (let i = 0; i < entry.count; i++) {
         deck.push({ uid: 'c' + (++uid), def: def, temporaryCostModifier: 0 });
+      }
+    });
+    return deck;
+  }
+
+  // 按「卡牌ID+数量」规格生成牌组（故事模式用文档牌组）
+  function makeDeckFromSpec(spec) {
+    const deck = [];
+    let uid = 0;
+    (spec || []).forEach(function (entry) {
+      const def = getCardDef(entry.id);
+      if (!def) return;
+      for (let i = 0; i < entry.count; i++) {
+        deck.push({ uid: 's' + (++uid), def: def, temporaryCostModifier: 0 });
       }
     });
     return deck;
@@ -211,8 +230,12 @@
     return m;
   }
 
-  function currentAttack(key) { return Math.round(state[key].attack * statModifier(state[key], 'attack')); }
-  function currentDefense(key) { return Math.round(state[key].defense * statModifier(state[key], 'defense')); }
+  function currentAttack(key) {
+    return Math.round(state[key].attack * statModifier(state[key], 'attack') * (state[key].passiveAtkMult || 1));
+  }
+  function currentDefense(key) {
+    return Math.round(state[key].defense * statModifier(state[key], 'defense') * (state[key].passiveDefMult || 1));
+  }
   // 有效速度：基础速度 × 状态速度修正（增税负担/疾走/减速等），决定每轮先手
   function effectiveSpeed(key) { return Math.round(state[key].speed * statModifier(state[key], 'speed')); }
 
@@ -224,6 +247,12 @@
       if (def && def.mods && def.mods.incoming) m *= def.mods.incoming;
     });
     return m;
+  }
+
+  // 生效中的伤害标度：故事模式使用较小的数值池
+  function dmgScale() {
+    if (state.storyActive) return state.storyScale > 0 ? state.storyScale : DMG_SCALE;
+    return DMG_SCALE;
   }
 
   // ------------------------------------------------------------------
@@ -366,7 +395,7 @@
     const atk = currentAttack(atkKey);
     const def = currentDefense(defKey);
     const randomCoef = rand(0.9, 1.1);
-    let raw = (atk - def) * mult * randomCoef * DMG_SCALE;
+    let raw = (atk - def) * mult * randomCoef * dmgScale();
 
     // 状态倍率：先增伤/减伤，再考虑暴击
     const incoming = incomingDamageMultiplier(defKey);
@@ -535,6 +564,71 @@
     startTurn(state.firstActorKey);
   }
 
+  // 故事模式战斗：玩家固定为孙笑川（成长档案），敌人为文档数值的脚本 Boss
+  function startStoryBattle(profile, enemyDef) {
+    state.player = createActor('player', 'sun_xiaochuan');
+    const p = state.player;
+    p.maxHp = profile.maxHp || 500;
+    p.hp = (profile.hp !== undefined && profile.hp !== null) ? profile.hp : p.maxHp;
+    p.attack = profile.attack || 30;
+    p.defense = profile.defense || 15;
+    p.speed = profile.speed || 35;
+    p.deck = makeDeckFromSpec(profile.deckSpec);
+    shuffle(p.deck);
+    p.discardPile = [];
+    p.hand = [];
+    p.items = randomItems();
+    p.passives = (profile.passives || []).slice();
+    p.passiveAtkMult = 1;
+    p.passiveDefMult = 1;
+
+    const e = state.enemy = {};
+    e.key = 'enemy';
+    e.name = enemyDef.name;
+    e.emoji = enemyDef.emoji || '👾';
+    e.tagline = enemyDef.tag || '招核残影';
+    e.characterId = enemyDef.characterId || ('story_' + enemyDef.id);
+    e.maxHp = enemyDef.hp;
+    e.hp = enemyDef.hp;
+    e.attack = enemyDef.atk || 0;
+    e.defense = enemyDef.def || 0;
+    e.speed = enemyDef.speed || 1;
+    e.ap = 0;
+    e.maxAp = 10;
+    e.deck = [];
+    e.discardPile = [];
+    e.hand = [];
+    e.items = [];
+    e.statuses = [];
+    e.discardUsedThisTurn = false;
+    e.costReduction = 0;
+    e.passiveAtkMult = 1;
+    e.passiveDefMult = 1;
+
+    state.logs = [];
+    state.turnSeq = 0;
+    state.winnerKey = null;
+    state.selectedCardIndex = null;
+    state.pendingOverflowDiscards = 0;
+    state.isProcessing = false;
+    state.abstractInProgress = false;
+    if (state.abstractTimer) clearTimeout(state.abstractTimer);
+    state.abstractTimer = null;
+    state.pvpMode = false;
+    state.playerAuto = false;
+    state.storyActive = true;
+    state.storyScale = (enemyDef.scale && enemyDef.scale > 0) ? enemyDef.scale : 1.35;
+    state.phase = PHASE.TURN_START;
+    state.firstActorKey = 'player';
+    state.roundStarterKey = 'player';
+    state.turnNoInRound = 0;
+
+    log('⚔️ 故事战：孙笑川 VS ' + e.name + '（' + e.hp + '/' + e.maxHp + ' HP）');
+    drawCards('player', 3);
+    emitVisual('battleStart');
+    startTurn('player');
+  }
+
   function startTurn(key) {
     if (isOver()) return;
     state.phase = PHASE.TURN_START;
@@ -564,6 +658,13 @@
     });
     refreshUI();
 
+    // 故事模式：回合开始钩子（被动：廉价小锅等）
+    if (state.storyActive && key === 'player' &&
+        state.storyHooks && typeof state.storyHooks.onPlayerTurnStart === 'function') {
+      try { state.storyHooks.onPlayerTurnStart(); } catch (e) { /* 忽略 */ }
+      refreshUI();
+    }
+
     // 获得 AP：+3；增税负担额外 -1（最低获得 0）
     let apGain = 3;
     const taxed = hasStatus(key, 'tax_burden');
@@ -573,8 +674,14 @@
     log(actor.name + '获得 ' + apGain + ' AP' + (taxed ? '（增税负担 -1）' : ''));
     refreshUI();
 
-    // 抽 2 张
-    drawCards(key, 2);
+    // 抽 2 张（故事敌人改为每回合直接生成技能手牌）
+    if (state.storyActive && key === 'enemy' &&
+        typeof state.storyHandProvider === 'function') {
+      actor.hand = state.storyHandProvider(actor);
+      refreshUI();
+    } else {
+      drawCards(key, 2);
+    }
 
     if (isOver()) return;
     if (state.phase === PHASE.OVERFLOW) {
@@ -593,6 +700,13 @@
     // 抽象化：进入出牌阶段时自动执行随机行为，玩家/AI 均不可手动操作
     if (hasStatus(key, 'abstract')) {
       runAbstractTurn(key);
+      return;
+    }
+
+    // 故事模式：敌人由故事层驱动（Boss AI / 脚本技能）
+    if (state.storyActive && key === 'enemy' &&
+        typeof state.storyEnemyDriver === 'function') {
+      runStoryEnemyTurn(key);
       return;
     }
 
@@ -620,6 +734,32 @@
         },
         function () {
           // 兜底：即使 AI 异常也不能让回合卡死
+          state.isProcessing = false;
+          if (state.phase === PHASE.ACTION && state.currentActorKey === key && !isOver()) {
+            endTurn(key);
+          }
+          refreshUI();
+        }
+      );
+    } else {
+      state.isProcessing = false;
+      endTurn(key);
+    }
+  }
+
+  // 故事敌人回合：调用 story.js 注册的 Boss/敌人行动驱动
+  function runStoryEnemyTurn(key) {
+    if (isOver()) return;
+    state.isProcessing = true;
+    refreshUI();
+    const p = state.storyEnemyDriver(key);
+    if (p && typeof p.then === 'function') {
+      p.then(
+        function () {
+          state.isProcessing = false;
+          refreshUI();
+        },
+        function () {
           state.isProcessing = false;
           if (state.phase === PHASE.ACTION && state.currentActorKey === key && !isOver()) {
             endTurn(key);
@@ -750,10 +890,25 @@
     checkDeath();
     if (isOver()) return;
 
+    // 故事模式：玩家回合结束钩子（被动：日服男枪等）
+    if (state.storyActive && key === 'player' &&
+        state.storyHooks && typeof state.storyHooks.onPlayerTurnEnd === 'function') {
+      try { state.storyHooks.onPlayerTurnEnd(); } catch (e) { /* 忽略 */ }
+      if (isOver()) return;
+      refreshUI();
+    }
+
     // 切换行动方：轮内交替；一轮结束后按“当前有效速度”决定下一轮先手（同速则轮流）
     let next;
     if (state.turnNoInRound >= 2) {
       state.turnNoInRound = 0;
+      // 故事模式：完成一轮后的钩子（被动：军国武士道 / 昭和的声音 / 耐活王）
+      if (state.storyActive && state.storyHooks &&
+          typeof state.storyHooks.onRoundEnd === 'function') {
+        try { state.storyHooks.onRoundEnd(); } catch (e) { /* 忽略 */ }
+        if (isOver()) return;
+        refreshUI();
+      }
       const starter = chooseRoundStarter();
       if (starter !== state.roundStarterKey) {
         log('⚡ ' + state[starter].name + ' 凭速度抢先手！');
@@ -922,6 +1077,12 @@
     log('🎉 ' + winner.name + ' 获胜！' + loser.name + ' HP 归零。');
     if (state.abstractTimer) clearTimeout(state.abstractTimer);
     state.abstractTimer = null;
+    // 故事模式：由故事层接管胜利/失败流程（奖励、Boss演出、败北界面）
+    if (state.storyActive && state.storyHooks &&
+        typeof state.storyHooks.onBattleEnd === 'function') {
+      try { state.storyHooks.onBattleEnd(winnerKey); } catch (e) { /* 忽略 */ }
+      return;
+    }
     emitVisual('gameOver', { winnerKey: winnerKey });
   }
 
@@ -944,6 +1105,11 @@
     state.abstractTimer = null;
     state.playerAuto = false;
     state.animSpeed = 1;
+    state.storyActive = false;
+    state.storyScale = 1.35;
+    state.storyHandProvider = null;
+    state.storyEnemyDriver = null;
+    state.storyHooks = null;
   }
 
   // 公开 API（卡片效果通过 GameApi 访问结算函数）
@@ -991,6 +1157,7 @@
 
     // 回合流程
     startBattle: startBattle,
+    startStoryBattle: startStoryBattle,
     startTurn: startTurn,
     endTurn: endTurn,
     playerEndTurn: playerEndTurn,

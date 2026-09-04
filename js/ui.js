@@ -29,6 +29,7 @@
       turnBanner: $('turn-banner'),
       fxLayer: $('fx-layer'),
       turnBadge: $('turn-badge'),
+      storyFlag: $('story-flag'),
       stageHint: $('stage-hint'),
       logList: $('log-list'),
       hand: $('hand'),
@@ -377,6 +378,26 @@
     refs.btnAuto.disabled = G.isOver();
   }
 
+  // 故事模式界面标识（右上角阶段/Boss 徽章、Boss 区域高亮）
+  function updateStoryChrome() {
+    const G = Game;
+    if (!refs.storyFlag) return;
+    if (G.state.storyActive && G.state.player) {
+      const type = G.state.storyStageType || 'battle';
+      const boss = type === 'boss' || type === 'finalBoss';
+      refs.storyFlag.textContent = '🎬 故事' + (G.state.storyStageNum ? ' · ' + G.state.storyStageNum : '') +
+        (boss ? ' · 👑 BOSS' : '');
+      refs.storyFlag.classList.toggle('boss', boss);
+      refs.storyFlag.classList.remove('hidden');
+      const z = refs.zone_enemy;
+      if (z) z.classList.toggle('boss-zone', boss);
+    } else {
+      refs.storyFlag.classList.add('hidden');
+      const z = refs.zone_enemy;
+      if (z) z.classList.remove('boss-zone');
+    }
+  }
+
   function renderLog() {
     const G = Game;
     const items = G.state.logs.map(function (line) {
@@ -407,6 +428,7 @@
     renderButtons();
     renderLog();
     updateAutoBar();
+    updateStoryChrome();
     syncOverlay();
   }
 

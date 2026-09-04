@@ -15,29 +15,27 @@
       <div class="home-floaty f1">😎</div>
       <div class="home-floaty f2">👩‍💼</div>
       <div class="home-floaty f3">🃏</div>
-      <div class="home-floaty f4">🎉</div>
+      <div class="home-floaty f4">🪖</div>
       <div class="home-floaty f5">🌀</div>
-      <div class="home-floaty f6">🛡️</div>
-      <div class="home-inner">
+      <div class="home-floaty f6">⛩️</div>
+      <div class="home-inner v2-home">
         <div class="logo-avatars">
           <span class="logo-av av-sun">😎</span>
           <span class="logo-vs">VS</span>
           <span class="logo-av av-sanae">👩‍💼</span>
         </div>
         <h1 class="logo-title">孙笑川大战高市早苗</h1>
-        <p class="logo-sub">回合制卡牌对战 · 娱乐向同人网页游戏</p>
-        <div class="home-features">
-          <span>🃏 40 张卡牌</span>
-          <span>🌀 14 种状态</span>
-          <span>🧰 道具系统</span>
-          <span>🤖 规则 AI</span>
-          <span>📴 完全离线</span>
+        <p class="logo-sub">抽象之力 VS 招核残影</p>
+        <div class="v2-menu">
+          <button id="btn-story" class="btn btn-big btn-primary home-play">🎬 故事模式</button>
+          <button id="btn-free" class="btn btn-big btn-primary">⚔️ 自由对战</button>
+          <button id="btn-codex" class="btn btn-big btn-ghost">🃏 卡牌图鉴</button>
+          <button id="btn-status-codex" class="btn btn-big btn-ghost">🌀 状态图鉴</button>
+          <button id="btn-rules" class="btn btn-big btn-ghost">📖 游戏说明</button>
+          <button id="btn-settings" class="btn btn-big btn-ghost">⚙️ 设置</button>
         </div>
-        <div class="home-buttons">
-          <button id="btn-play-now" class="btn btn-big btn-primary home-play">🎮 开始游戏</button>
-          <button id="btn-dev-statement" class="btn btn-big btn-ghost">📜 开发者声明</button>
-        </div>
-        <p class="home-foot">v1.4 · 作者 anontomorin · 纯原生 HTML5 / CSS3 / JavaScript · 双击 index.html 即可运行 · 无需联网</p>
+        <p class="home-foot">v2.0 · 作者 anontomorin · 纯原生 HTML5/CSS3/JS · 双击 index.html 即可运行 · 无需联网</p>
+        <button id="btn-dev-statement" class="dev-link">📜 开发者声明</button>
       </div>
     </section>
 
@@ -45,8 +43,8 @@
     <section id="screen-select" class="screen">
       <button id="btn-home-back" class="btn-home-back" title="返回首页">⌂ 首页</button>
       <header class="screen-header">
-        <h1 class="game-title">😎 孙笑川大战高市早苗 👩‍💼</h1>
-        <p class="subtitle">单机回合制卡牌对战 · 纯 HTML5 网页游戏</p>
+        <h1 class="game-title">⚔️ 自由对战</h1>
+        <p class="subtitle">选择角色，与 AI 进行独立战斗（不影响故事进度）</p>
       </header>
       <div id="char-cards" class="char-cards"></div>
       <p id="select-hint" class="select-hint">👆 点击角色卡选择你要使用的角色</p>
@@ -63,6 +61,7 @@
       <div class="battle-topbar">
         <div id="turn-badge" class="turn-badge">第 1 回合</div>
         <div class="vs-title">😎 VS 👩‍💼</div>
+        <div id="story-flag" class="story-flag hidden"></div>
         <button id="btn-sound" class="btn-sound" title="音效开关">🔊</button>
       </div>
 
@@ -248,10 +247,41 @@
           卡牌与数值全部为原创设计。代码仅用于学习交流。</p>
         <h4>🧾 免责声明</h4>
         <p>本游戏仅供娱乐，请理性娱乐、尊重他人。作者不对因游玩本游戏产生的任何后果负责。</p>
-        <p class="dev-sign">✍️ 作者 anontomorin ｜ 版本 v1.4 ｜ 技术栈：HTML5 + CSS3 + JavaScript ES6+ ｜ 运行方式：双击 index.html</p>
+        <p class="dev-sign">✍️ 作者 anontomorin ｜ 版本 v2.0 ｜ 技术栈：HTML5 + CSS3 + JavaScript ES6+ ｜ 运行方式：双击 index.html</p>
       </div>
       <div class="modal-buttons">
         <button id="btn-dev-close" class="btn btn-primary">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 图鉴弹层（卡牌/状态） ==================== -->
+  <div id="codex-overlay" class="overlay hidden">
+    <div class="modal modal-wide codex-modal">
+      <div class="codex-tabs">
+        <button id="codex-tab-cards" class="codex-tab on">🃏 卡牌图鉴</button>
+        <button id="codex-tab-status" class="codex-tab">🌀 状态图鉴</button>
+        <button id="codex-close" class="codex-close">✕</button>
+      </div>
+      <div id="codex-list" class="codex-list"></div>
+      <div id="codex-preview" class="codex-preview hidden"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 设置弹层 ==================== -->
+  <div id="settings-overlay" class="overlay hidden">
+    <div class="modal modal-wide">
+      <h3 class="modal-title">⚙️ 设置</h3>
+      <div class="settings-body">
+        <div class="setting-row"><span>🔊 音效</span>
+          <button id="set-sound" class="btn btn-ghost">开启</button></div>
+        <div class="setting-row"><span>💬 对白打字速度</span>
+          <button id="set-typing" class="btn btn-ghost">普通</button></div>
+        <div class="setting-row"><span>🎞 演出/托管速度</span>
+          <button id="set-speed" class="btn btn-ghost">1x</button></div>
+      </div>
+      <div class="modal-buttons">
+        <button id="set-close" class="btn btn-primary">完成</button>
       </div>
     </div>
   </div>
@@ -277,6 +307,10 @@
   <script src="js/game.js"></script>
   <script src="js/ai.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/dialogue.js"></script>
+  <script src="js/story.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
