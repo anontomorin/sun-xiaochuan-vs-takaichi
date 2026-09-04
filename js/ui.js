@@ -260,7 +260,11 @@
     refs['avatar_' + key].innerHTML = avatarInnerHTML(actor);
     refs['stavatar_' + key].innerHTML = avatarInnerHTML(actor);
     refs['tag_' + key].textContent = actor.tagline;
-    refs['speed_' + key].textContent = '速度 ' + actor.speed + ' · 攻 ' + actor.attack + ' · 防 ' + actor.defense;
+    const effSp = (Game.effectiveSpeed && Game.effectiveSpeed(key)) || actor.speed;
+    const spTxt = effSp === actor.speed
+      ? '速度 ' + actor.speed
+      : '速度 ' + actor.speed + '（' + effSp + '）';
+    refs['speed_' + key].textContent = spTxt + ' · 攻 ' + actor.attack + ' · 防 ' + actor.defense;
 
     const hpPct = Math.max(0, Math.min(100, actor.hp / actor.maxHp * 100));
     refs['hpfill_' + key].style.width = hpPct + '%';

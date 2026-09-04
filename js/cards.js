@@ -40,7 +40,18 @@
   });
   defStatus({
     id: 'tax_burden', name: '增税负担', icon: '🧾', kind: 'negative', duration: 2,
-    desc: '速度-30%（仅显示）；每回合开始获得AP时额外-1（最低获得0）。'
+    mods: { speed: 0.7 },
+    desc: '速度-30%（影响每轮先手）；每回合开始获得AP时额外-1（最低获得0）。'
+  });
+  defStatus({
+    id: 'speed_up', name: '疾走', icon: '⚡', kind: 'buff', duration: 2,
+    category: 'speed_up', mods: { speed: 1.25 },
+    desc: '速度+25%，影响每轮谁先出手。'
+  });
+  defStatus({
+    id: 'speed_down', name: '减速', icon: '🐢', kind: 'negative', duration: 2,
+    category: 'speed_down', mods: { speed: 0.75 },
+    desc: '速度-25%，影响每轮谁先出手。'
   });
   defStatus({
     id: 'cyber_storm', name: '网暴风暴', icon: '🌊', kind: 'negative', duration: 2,
@@ -162,6 +173,24 @@
   });
 
   defCard({
+    id: 'rush', name: '嘴速拉满', cost: 1, type: 'special', count: 1,
+    desc: '速度+25%（2回合）；抽 1 张牌。速度更快者每轮先出手。',
+    effect: function (G, me) {
+      G.applyStatus(me, 'speed_up', 2);
+      G.drawCards(me, 1);
+    }
+  });
+
+  defCard({
+    id: 'dont_hurry', name: '你先别急', cost: 2, type: 'status', count: 1,
+    desc: '造成 0.3 倍物理伤害；对方速度-25%（2回合）。',
+    effect: function (G, me) {
+      G.dealPhysical(me, G.foeKey(me), 0.3);
+      G.applyStatus(G.foeKey(me), 'speed_down', 2);
+    }
+  });
+
+  defCard({
     id: 'emperor_blessing', name: '天皇の祝福', cost: 3, type: 'skill', count: 1,
     desc: '恢复最大 HP 的 20%；攻击力 +20%（2回合）。',
     effect: function (G, me) {
@@ -275,6 +304,24 @@
     effect: function (G, me) {
       G.healPct(me, 0.25);
       G.applyStatus(me, 'shelter_guard', 2);
+    }
+  });
+
+  defCard({
+    id: 'decisive', name: '雷厉风行', cost: 1, type: 'special', count: 1,
+    desc: '速度+25%（2回合）；抽 1 张牌。速度更快者每轮先出手。',
+    effect: function (G, me) {
+      G.applyStatus(me, 'speed_up', 2);
+      G.drawCards(me, 1);
+    }
+  });
+
+  defCard({
+    id: 'red_tape', name: '官僚主义', cost: 2, type: 'status', count: 1,
+    desc: '造成 0.3 倍物理伤害；对方速度-25%（2回合）。',
+    effect: function (G, me) {
+      G.dealPhysical(me, G.foeKey(me), 0.3);
+      G.applyStatus(G.foeKey(me), 'speed_down', 2);
     }
   });
 

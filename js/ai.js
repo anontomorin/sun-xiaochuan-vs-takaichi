@@ -89,6 +89,9 @@
         { cardId: 'cyber_storm', cond: function () { return !Game.hasStatus(foeKey, 'cyber_storm'); } },
         { cardId: 'dog_fans', cond: function () {
           return foe.hand.length >= 2 || (foe.hand.length === 0 && !Game.hasStatus(foeKey, 'dog_fans_siege'));
+        } },
+        { cardId: 'dont_hurry', cond: function () {
+          return Game.effectiveSpeed(foeKey) >= Game.effectiveSpeed(ai.key);
         } }
       ],
       takaichi_sanae: [
@@ -99,6 +102,9 @@
         { cardId: 'three_arrows', cond: function () { return !Game.hasStatus(foeKey, 'tax_burden'); } },
         { cardId: 'history_revision', cond: function () {
           return foe.hand.length === 0 && !Game.hasStatus(foeKey, 'cyber_break');
+        } },
+        { cardId: 'red_tape', cond: function () {
+          return Game.effectiveSpeed(foeKey) >= Game.effectiveSpeed(ai.key);
         } }
       ]
     };
@@ -174,6 +180,14 @@
       const defCard = ai.hand.find(function (c) { return c.def.type === 'defense'; });
       const di = defCard ? playableIndex(key, defCard) : -1;
       if (di >= 0) return { type: 'play', index: di };
+    }
+
+    // ---------- 提速抢跑：当前有效速度落后时，先给自己提速 ----------
+    if (Game.effectiveSpeed(key) < Game.effectiveSpeed(foeKey)) {
+      const boostId = charId === 'sun_xiaochuan' ? 'rush' : 'decisive';
+      const boost = ai.hand.find(function (c) { return c.def.id === boostId; });
+      const bi = boost ? playableIndex(key, boost) : -1;
+      if (bi >= 0) return { type: 'play', index: bi };
     }
 
     // ---------- P5 压制：优先施加敌方缺少的负面状态 ----------

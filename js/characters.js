@@ -21,17 +21,19 @@
       defense: 20,
       speed: 35,
       deckSpec: [
-        { id: 'abstract_combo', count: 4 },
-        { id: 'elegant', count: 3 },
+        { id: 'abstract_combo', count: 3 },
+        { id: 'elegant', count: 2 },
         { id: 'shouting', count: 2 },
-        { id: 'cyber_storm', count: 2 },
+        { id: 'cyber_storm', count: 1 },
         { id: 'emperor_blessing', count: 1 },
         { id: 'ultimate_rap', count: 1 },
         { id: 'dead_pig', count: 2 },
-        { id: 'dog_fans', count: 2 },
+        { id: 'dog_fans', count: 1 },
         { id: 'master', count: 1 },
         { id: 'abstract_bible', count: 1 },
-        { id: 'scam', count: 1 }
+        { id: 'scam', count: 1 },
+        { id: 'rush', count: 2 },
+        { id: 'dont_hurry', count: 2 }
       ]
     },
 
@@ -41,22 +43,24 @@
       emoji: '👩‍💼',
       photo: 'assets/img/takaichi_sanae.png',
       tagline: '政治强人 · 防守 · 经济攻击',
-      maxHp: 560,
+      maxHp: 550,
       attack: 32,
       defense: 30,
       speed: 30,
       deckSpec: [
-        { id: 'policy_debate', count: 4 },
+        { id: 'policy_debate', count: 3 },
         { id: 'tax_warning', count: 3 },
-        { id: 'three_arrows', count: 2 },
+        { id: 'three_arrows', count: 1 },
         { id: 'political_shelter', count: 1 },
         { id: 'tax_storm', count: 1 },
         { id: 'political_correctness', count: 2 },
-        { id: 'history_revision', count: 2 },
-        { id: 'hawkish', count: 2 },
+        { id: 'history_revision', count: 1 },
+        { id: 'hawkish', count: 1 },
         { id: 'female_pm', count: 1 },
         { id: 'taiwan_issue', count: 1 },
-        { id: 'consumption_tax', count: 1 }
+        { id: 'consumption_tax', count: 1 },
+        { id: 'decisive', count: 2 },
+        { id: 'red_tape', count: 2 }
       ]
     }
   };

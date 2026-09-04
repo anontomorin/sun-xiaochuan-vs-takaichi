@@ -23,7 +23,7 @@
   const LOG_LIMIT = 10;
   // 伤害标度：把「(攻-防)×倍率」放大到与 HP/治疗匹配的量级，保证对局在约 15~20 回合内结束。
   // 只放大伤害量级，不影响公式结构、随机系数、暴击、状态增减伤等全部规则。
-  const DMG_SCALE = 3.9;
+  const DMG_SCALE = 4.3;
 
   // 每回合结束触发的状态效果（game 里按状态 ID 处理，数据定义在 cards.js）
   const END_TURN_EFFECT = {
@@ -36,6 +36,8 @@
     phase: PHASE.SELECT,
     turnSeq: 0,          // 累计行动次数（用于日志回合数与“本回合刚施加”判定）
     firstActorKey: null, // 先手
+    roundStarterKey: null, // 当前轮先手方（速度机制：每轮重新按有效速度判定）
+    turnNoInRound: 0,    // 当前轮已开始的行动次数（1=先手方, 2=后手方）
     currentActorKey: null,
     winnerKey: null,
     player: null,
@@ -211,6 +213,8 @@
 
   function currentAttack(key) { return Math.round(state[key].attack * statModifier(state[key], 'attack')); }
   function currentDefense(key) { return Math.round(state[key].defense * statModifier(state[key], 'defense')); }
+  // 有效速度：基础速度 × 状态速度修正（增税负担/疾走/减速等），决定每轮先手
+  function effectiveSpeed(key) { return Math.round(state[key].speed * statModifier(state[key], 'speed')); }
 
   // 目标受到的伤害总倍率（增伤/减伤叠加后统一应用）
   function incomingDamageMultiplier(key) {
@@ -518,6 +522,8 @@
     state.firstActorKey = pSpeed > eSpeed ? 'player' : (eSpeed > pSpeed ? 'enemy' : 'player');
     log((state.firstActorKey === 'player' ? state.player.name : state.enemy.name) +
         ' 速度更高，获得先手');
+    state.roundStarterKey = state.firstActorKey;
+    state.turnNoInRound = 0;
 
     // 洗牌 + 起始抽 3 张
     shuffle(state.player.deck);
@@ -534,6 +540,7 @@
     state.phase = PHASE.TURN_START;
     state.currentActorKey = key;
     state.turnSeq += 1;
+    state.turnNoInRound += 1;
     state.selectedCardIndex = null;
     state.overflowResume = 'enterAction';
 
@@ -743,12 +750,30 @@
     checkDeath();
     if (isOver()) return;
 
-    const next = otherKey(key);
-    if (next === state.firstActorKey && !(state.turnSeq % 2 === 0)) {
-      // 回到先手方时即进入新的一轮（round 由 turnSeq 计算）
+    // 切换行动方：轮内交替；一轮结束后按“当前有效速度”决定下一轮先手（同速则轮流）
+    let next;
+    if (state.turnNoInRound >= 2) {
+      state.turnNoInRound = 0;
+      const starter = chooseRoundStarter();
+      if (starter !== state.roundStarterKey) {
+        log('⚡ ' + state[starter].name + ' 凭速度抢先手！');
+      }
+      state.roundStarterKey = starter;
+      next = starter;
+    } else {
+      next = otherKey(key);
     }
     refreshUI();
     startTurn(next);
+  }
+
+  // 按有效速度选出下一轮先手；同速时与上一轮先手方交替
+  function chooseRoundStarter() {
+    const ps = effectiveSpeed('player');
+    const es = effectiveSpeed('enemy');
+    if (ps !== es) return ps > es ? 'player' : 'enemy';
+    const last = state.roundStarterKey || state.firstActorKey || 'enemy';
+    return last === 'player' ? 'enemy' : 'player';
   }
 
   // 玩家主动结束回合
@@ -908,6 +933,8 @@
     state.turnSeq = 0;
     state.currentActorKey = null;
     state.firstActorKey = null;
+    state.roundStarterKey = null;
+    state.turnNoInRound = 0;
     state.winnerKey = null;
     state.selectedCardIndex = null;
     state.pendingOverflowDiscards = 0;
@@ -946,6 +973,7 @@
     getStatusDef: getStatusDef,
     currentAttack: currentAttack,
     currentDefense: currentDefense,
+    effectiveSpeed: effectiveSpeed,
     incomingDamageMultiplier: incomingDamageMultiplier,
     getCardDef: getCardDef,
 
