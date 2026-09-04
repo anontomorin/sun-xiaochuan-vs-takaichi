@@ -1200,6 +1200,14 @@ body::after {
 .st-passive-ic { letter-spacing: 2px; }
 .st-menu { display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .st-menu .btn { min-width: 260px; }
+.st-backup {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 0 2px;
+  flex-wrap: wrap;
+}
+.st-backup .btn { min-width: 150px; font-size: 14px; }
 .st-tip { color: #8f879f; font-size: 13px; margin-top: 18px; }
 
 .st-map-title { font-size: 24px; margin-bottom: 14px; }
@@ -1337,6 +1345,15 @@ body::after {
   justify-content: center;
   font-size: 58px;
   animation: idle-bob 2.2s ease-in-out infinite;
+  overflow: hidden;
+}
+.dp-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+  border-radius: 50%;
+  display: block;
 }
 .dlg-portrait.enemy { border-color: rgba(220, 60, 70, 0.8); }
 .dlg-portrait.sys { font-size: 44px; border-color: rgba(140, 200, 255, 0.5); box-shadow: 0 0 22px rgba(90, 150, 255, 0.3); }

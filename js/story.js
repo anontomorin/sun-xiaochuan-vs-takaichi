@@ -59,6 +59,73 @@
     };
   }
 
+  function toast(msg) {
+    if (global.UI && typeof UI.toast === 'function') UI.toast(msg, 3200);
+  }
+
+  function downloadText(filename, text) {
+    try {
+      const blob = new Blob([text], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function exportRun() {
+    const data = run || StorySave.load();
+    if (!data) { toast('还没有可导出的存档'); return; }
+    const ok = downloadText(
+      '孙笑川大战高市早苗-存档-' + (data.completed ? '通关' : '进度' + (data.idx + 1)) + '.json',
+      JSON.stringify({ app: 'sxc-story-save', version: 2, savedAt: Date.now(), run: data }, null, 2)
+    );
+    toast(ok ? '✅ 存档已导出到本地文件' : '导出失败，请换浏览器重试');
+  }
+
+  function sanitizeRun(obj) {
+    const base = freshRun();
+    const r = obj && typeof obj === 'object' ? obj : {};
+    const pv = Array.isArray(r.passives)
+      ? r.passives.filter(function (id) { return D.PASSIVES[id]; })
+      : [];
+    return {
+      idx: Math.max(0, Math.min(D.STAGES.length, parseInt(r.idx, 10) || 0)),
+      maxHp: Math.max(50, parseInt(r.maxHp, 10) || base.maxHp),
+      hp: Math.max(1, Math.min(parseInt(r.maxHp, 10) || base.maxHp, parseInt(r.hp, 10) || 1)),
+      attack: Math.max(1, parseInt(r.attack, 10) || base.attack),
+      defense: Math.max(0, parseInt(r.defense, 10) || base.defense),
+      speed: base.speed,
+      passives: pv,
+      cleared: D.STAGES.map(function (_, i) { return !!(r.cleared && r.cleared[i]); }),
+      completed: !!r.completed
+    };
+  }
+
+  function importRunFromFile(file) {
+    const reader = new FileReader();
+    reader.onload = function () {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        const payload = parsed && parsed.run ? parsed.run : parsed;
+        run = sanitizeRun(payload);
+        save();
+        toast('✅ 存档导入成功，已继续');
+        if (run.completed) { showEndingScreen(false); } else { showMap(); }
+      } catch (e) {
+        if (global.console) console.error('存档导入失败:', e);
+        toast('❌ 存档文件无效，导入失败');
+      }
+    };
+    reader.onerror = function () { toast('❌ 读取文件失败'); };
+    reader.readAsText(file);
+  }
+
   function speech(who, text) {
     // 战斗中敌方/系统台词反馈（尽量沉浸）
     const v = G.visual;
@@ -127,7 +194,13 @@
       '<button class="btn btn-big btn-ghost" data-new>✨ 新游戏</button>' +
       (has ? '<button class="btn btn-big btn-ghost" data-wipe>🗑 删除存档</button>' : '') +
       '</div>' +
+      '<div class="st-backup">' +
+      '<button class="btn btn-ghost" data-export>⬇️ 导出存档</button>' +
+      '<button class="btn btn-ghost" data-import>⬆️ 导入存档</button>' +
+      '<input type="file" data-file accept=".json,application/json" class="hidden">' +
+      '</div>' +
       '<p class="st-tip">你将扮演孙笑川，从成都出租屋一路嘴硬到国会议事堂屋顶。</p>' +
+      '<p class="st-tip">💾 存档会自动保存在本机；「导出」可下载成文件备份/换设备，「导入」继续上次进度。</p>' +
       '</div>';
     viewEl.querySelector('.st-back').addEventListener('click', Story.leave);
     const bNew = viewEl.querySelector('[data-new]');
@@ -154,6 +227,18 @@
       confirmBox('删除存档', '故事进度将被清除，确定吗？', function () {
         StorySave.clear(); renderHome();
       });
+    });
+    const bExport = viewEl.querySelector('[data-export]');
+    if (bExport) bExport.addEventListener('click', exportRun);
+    const bImport = viewEl.querySelector('[data-import]');
+    if (bImport) bImport.addEventListener('click', function () {
+      const input = viewEl.querySelector('[data-file]');
+      if (input) input.click();
+    });
+    const fileEl = viewEl.querySelector('[data-file]');
+    if (fileEl) fileEl.addEventListener('change', function () {
+      if (fileEl.files && fileEl.files[0]) importRunFromFile(fileEl.files[0]);
+      fileEl.value = '';
     });
   }
 
@@ -227,6 +312,13 @@
     }, stage.enemy);
   }
 
+  // 说话人 → 角色照片映射（高市早苗仅在最终战以“enemy”出现）
+  function portraitsFor(stage) {
+    const m = { sun: 'sun_xiaochuan' };
+    if (stage && (stage.id === 11 || stage.name === '高市早苗')) m.enemy = 'takaichi_sanae';
+    return m;
+  }
+
   function runStage() {
     const stage = D.STAGES[run.idx];
     activeStage = stage;
@@ -242,7 +334,10 @@
     const goBattle = function () { startBattle(); };
     if (Story.testMode) { goBattle(); return; }
     hideMainScreens();
-    StoryDialogue.play(introSeq, { boss: isBoss, names: names, icons: icons, onSkip: goBattle })
+    StoryDialogue.play(introSeq, {
+      boss: isBoss, names: names, icons: icons,
+      portraits: portraitsFor(stage), onSkip: goBattle
+    })
       .then(function (r) { if (!r.skipped) goBattle(); })
       .catch(errFallback(goBattle));
   }
@@ -438,7 +533,10 @@
       if (stage.type === 'finalBoss') { finishRun(); return; }
       rewardFlow();
     };
-    StoryDialogue.play(seq, { boss: stage.type === 'boss' || stage.type === 'finalBoss', names: names, icons: icons })
+    StoryDialogue.play(seq, {
+      boss: stage.type === 'boss' || stage.type === 'finalBoss',
+      names: names, icons: icons, portraits: portraitsFor(stage)
+    })
       .then(function () { next(); })
       .catch(errFallback(next));
   }

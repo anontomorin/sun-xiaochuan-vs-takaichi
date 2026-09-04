@@ -218,6 +218,11 @@
       const text = String(item[1] === undefined ? '' : item[1]);
       const names = (current.opts && current.opts.names) || DEFAULT_NAMES;
       const icons = (current.opts && current.opts.icons) || DEFAULT_ICONS;
+      // 默认：孙笑川说话即用其本人照片；其它角色由调用方指定
+      const portraits = Object.assign(
+        { sun: 'sun_xiaochuan' },
+        (current.opts && current.opts.portraits) || {}
+      );
       const boss = current.opts && current.opts.boss;
       const name = names[who] || who;
       const icon = (who === 'enemy' && current.opts && current.opts.enemyIcon)
@@ -227,7 +232,15 @@
       els.speaker.textContent = name;
       els.speaker.className = 'dlg-speaker ' + who + (boss ? ' boss' : '');
       els.portrait.className = 'dlg-portrait ' + who + (boss ? ' boss' : '');
-      els.portrait.innerHTML = '<span class="dp-icon">' + icon + '</span>';
+      // 照片头像：说话人映射到角色 ID 且照片已加载 → 使用真实照片
+      let portraitHTML = '<span class="dp-icon">' + icon + '</span>';
+      const cid = portraits[who];
+      const cdef = (cid && global.Characters && global.Characters.CHARACTERS[cid]) || null;
+      if (cdef && cdef.photo && cdef.photoOk) {
+        portraitHTML = '<img class="dp-photo" src="' + cdef.photo +
+          '" alt="' + (cdef.name || '') + '">';
+      }
+      els.portrait.innerHTML = portraitHTML;
       typeText(text);
     } catch (err) {
       if (global.console) console.error('对白条目异常，自动跳过:', err);
