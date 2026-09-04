@@ -44,6 +44,7 @@
   let current = null; // {seq, i, opts, done, skipTimer}
   let typeTimer = null;
   let typeSpeed = 24; // 逐字毫秒（设置可调）
+  let watchdogTimer = null; // 防卡死：长时间无推进则自动下一句
 
   function cancelTimers() {
     if (typeTimer) { clearInterval(typeTimer); typeTimer = null; }
@@ -60,23 +61,43 @@
   }
 
   function nextLine() {
-    if (!current || busy) return;
+    if (!current) return;
     if (typeTimer) { finishTyping(); return; }
     current.i += 1;
     if (current.i >= current.seq.length) { endSequence(false); return; }
     renderItem(current.seq[current.i]);
   }
 
+  function watchdog() {
+    if (!current) return;
+    const now = Date.now();
+    const item = current.seq[current.i];
+    const isAuto = item && (item.scene !== undefined || item.fx);
+    // 场景/演出自带计时器：超时未推进则强制跳过（兜底演出异常）
+    if (isAuto && current.stuckAt && now - current.stuckAt > 8000) {
+      if (global.console) console.warn('[剧情看门狗] 自动演出 8s 未推进，强制跳过');
+      nextLine();
+      return;
+    }
+    // 打字进行中但长时间无字符输出：说明打字机异常，直接整句显示
+    if (typeTimer && current.typingStart && now - current.typingStart > 12000) {
+      if (global.console) console.warn('[剧情看门狗] 打字机异常，直接显示整句');
+      cancelTimers();
+      finishTyping();
+    }
+    // 文本已打完等待点击：不自动跳过
+  }
+
   function bindInput() {
     const onKey = function (e) {
-      if (!current || busy) return;
+      if (!current) return;
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         nextLine();
       }
     };
     const onClick = function (e) {
-      if (!current || busy) return;
+      if (!current) return;
       if (e.target === els.skip) return;
       nextLine();
     };
@@ -84,7 +105,7 @@
     document.addEventListener('keydown', onKey);
     els.skip.addEventListener('click', function (e) {
       e.stopPropagation();
-      if (current && !busy) endSequence(true);
+      if (current) endSequence(true);
     });
     current._unbind = function () {
       if (root && typeof root.removeEventListener === 'function') root.removeEventListener('click', onClick);
@@ -169,6 +190,7 @@
 
   function typeText(text) {
     try {
+      current.typingStart = Date.now();
       els.text.textContent = '';
       els.text.classList.remove('full');
       els.next.classList.add('hidden');
@@ -186,6 +208,7 @@
 
   function renderItem(item) {
     try {
+      current.stuckAt = Date.now();
       if (current.skipTimer) { clearTimeout(current.skipTimer); current.skipTimer = null; }
       els.scene.classList.add('hide');
       if (item && item.scene !== undefined) { renderSceneCard(item.scene); return; }
@@ -214,6 +237,7 @@
 
   function endSequence(skipped) {
     cancelTimers();
+    if (watchdogTimer) { clearInterval(watchdogTimer); watchdogTimer = null; }
     if (current && current._unbind) current._unbind();
     const cb = current && current.opts && current.opts.onDone;
     const onSkip = current && current.opts && current.opts.onSkip;
@@ -239,8 +263,10 @@
       current = {
         seq: seq || [], i: 0, opts: opts,
         skipTimer: null,
+        stuckAt: Date.now(),
         resolve: resolve
       };
+      if (!watchdogTimer) watchdogTimer = setInterval(watchdog, 3000);
       bindInput();
       if (!seq || seq.length === 0) { endSequence(false); return; }
       renderItem(seq[0]);
@@ -256,6 +282,16 @@
     play: play,
     skipAll: skipAll,
     setSpeed: function (ms) { typeSpeed = Math.max(0, ms); },
-    isBusy: function () { return busy; }
+    isBusy: function () { return busy; },
+    _rootEl: function () { return root; },
+    _debug: function () {
+      const item = current ? current.seq[current.i] : null;
+      return {
+        busy: busy, i: current ? current.i : -1,
+        len: current ? current.seq.length : 0,
+        kind: item ? (item.scene !== undefined ? 'scene' : (item.fx ? 'fx' : 'text')) : 'none',
+        typing: !!typeTimer, skipTimer: !!(current && current.skipTimer)
+      };
+    }
   };
 })(window);
