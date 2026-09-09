@@ -371,7 +371,7 @@
     const icons = { sun: '😎', enemy: stage.emoji, sys: '🖥️' };
     const isBoss = stage.type === 'boss' || stage.type === 'finalBoss';
     const goBattle = function () { startBattle(); };
-    if (Story.testMode) { goBattle(); return; }
+    if (Story.testMode || autoPlaying()) { goBattle(); return; }
     hideMainScreens();
     StoryDialogue.play(introSeq, {
       boss: isBoss, names: names, icons: icons,
@@ -604,6 +604,14 @@
 
   function showDefeat() {
     hideView();
+    if (autoPlaying()) {
+      // 自动战斗：战败自动重新挑战（满血重来，永久奖励保留）
+      run.hp = run.maxHp;
+      save();
+      battleBusy = true;
+      startBattle();
+      return;
+    }
     const ov = h('<div class="overlay"><div class="modal modal-wide st-defeat">' +
       '<h2 class="st-defeat-title">💀 你被抽象之力反噬了</h2>' +
       '<p class="modal-desc">' + activeStage.title + ' · ' + activeStage.name + '</p>' +
@@ -650,14 +658,14 @@
       const line = got
         ? [['sys', '获得被动：' + D.PASSIVES[roll.id].name + '！']]
         : [['sys', '这次没有获得额外被动……']];
-      if (Story.testMode) { advance(); return; }
+      if (autoPlaying()) { advance(); return; }
       showRewardCard(rw, got ? D.PASSIVES[roll.id] : null)
         .then(function () { return StoryDialogue.play(line, { names: names, icons: icons }); })
         .then(function () { advance(); })
         .catch(errFallback(advance));
       return;
     }
-    if (Story.testMode) { advance(); return; }
+    if (autoPlaying()) { advance(); return; }
     showRewardCard(rw, null).then(function () { advance(); }).catch(errFallback(advance));
   }
 
@@ -692,7 +700,7 @@
     return new Promise(function (resolve) {
       ov.querySelector('[data-ok]').addEventListener('click', function () {
         ov.remove();
-        if (lines.length && !Story.testMode) {
+        if (lines.length && !autoPlaying()) {
           StoryDialogue.play(lines, { names: names, icons: icons })
             .then(function () { resolve(); })
             .catch(function () { resolve(); });
@@ -702,6 +710,17 @@
   }
 
   function showChoice(rw) {
+    if (autoPlaying()) {
+      // 自动战斗：血量低选回血，否则选属性强化
+      const heal = rw.choices.find(function (c) { return c.id === 'heal'; });
+      const stats = rw.choices.find(function (c) { return c.id === 'stats'; });
+      const c = (run.hp < run.maxHp * 0.6 && heal) ? heal : (stats || rw.choices[0]);
+      if (c.id === 'heal') { run.hp = run.maxHp; }
+      else if (c.id === 'stats') { run.attack += 5; run.defense += 5; }
+      save();
+      advance();
+      return;
+    }
     const ov = h('<div class="overlay"><div class="modal modal-wide">' +
       '<h3 class="modal-title">' + activeStage.title + '</h3>' +
       '<div class="st-choices">' + rw.choices.map(function (c, i) {
@@ -729,6 +748,22 @@
   function showBossChoice(rw) {
     run.hp = run.maxHp; // Boss 固定回满
     save();
+    if (autoPlaying()) {
+      // 自动战斗：优先属性强化（稳定成长），其次首个可用被动
+      const stats = rw.choices.find(function (c) { return c.id === 'stats'; });
+      const passive = rw.choices.find(function (c) { return c.id === 'passive' &&
+        run.passives.indexOf(c.passive) < 0; });
+      const c = stats || passive || rw.choices[0];
+      if (c.id === 'stats') {
+        if (c.statsDefOnly) run.defense += c.statsDefOnly;
+        else { run.attack += 5; run.defense += 5; }
+      } else if (c.id === 'passive') {
+        if (run.passives.indexOf(c.passive) < 0) run.passives.push(c.passive);
+      }
+      save();
+      advance();
+      return;
+    }
     const ov = h('<div class="overlay"><div class="modal modal-wide st-boss-choice">' +
       '<h3 class="modal-title">👑 ' + activeStage.title + ' · 战利品</h3>' +
       '<p class="modal-desc">选择一项强化</p>' +
@@ -807,6 +842,11 @@
     // 通过改造 showBossChoice 支持：若 choice 有 defOnly 则只加防御
   }
 
+  // 自动战斗（AI 托管）开启时：奖励自动选择最优，不让玩家挂机卡在选择界面
+  function autoPlaying() {
+    return !!Story.testMode || !!(G.state && G.state.playerAuto);
+  }
+
   // 休息/强化关
   function runRestStage() {
     const stage = D.STAGES[run.idx];
@@ -817,7 +857,7 @@
       save();
       const names = { sun: '孙笑川', sys: '系统' };
       const icons = { sun: '😎', sys: '🖥️' };
-      if (Story.testMode) { advance(); return; }
+      if (autoPlaying()) { advance(); return; }
       StoryDialogue.play(stage.lines, { names: names, icons: icons })
         .then(function () { run.idx += 1; save(); Story.enter(); showMap(); })
         .catch(errFallback(function () { run.idx += 1; save(); Story.enter(); showMap(); }));
@@ -825,9 +865,9 @@
     }
     // reward（选择关）
     const intro = [].concat(stage.reward.intro || []);
-    if (Story.testMode) {
-      // 血量低时选回血，否则选强化（保证测试可通关）
-      const c = run.hp < run.maxHp * 0.55 ? stage.reward.choices[0] : stage.reward.choices[1];
+    if (autoPlaying()) {
+      // 血量低时选回血，否则选强化（自动战斗保证可持续推进）
+      const c = run.hp < run.maxHp * 0.6 ? stage.reward.choices[0] : stage.reward.choices[1];
       if (c.id === 'heal') run.hp = run.maxHp;
       else { run.attack += 5; run.defense += 5; }
       save();
@@ -846,13 +886,17 @@
   }
 
   // 供无头自动通关测试：返回是否通关
-  Story.autoplay = async function () {
+  // opts: { fromIdx, maxAttempts, maxRounds } —— 支持从指定关卡开始、限制重试次数与单局时长
+  Story.autoplay = async function (opts) {
+    opts = opts || {};
     Story.testMode = true;
     G.state.simMode = true; // 双方全自动（玩家侧走 AI，Boss 走脚本驱动）
     G.state.animSpeed = 40;
     run = freshRun();
-    run.idx = 0;
+    run.idx = opts.fromIdx || 0;
     roundCount = 0;
+    const maxAttempts = opts.maxAttempts || 10;
+    const maxRounds = opts.maxRounds || 300; // 单局最大回合数保护
     let guard = 0;
     while (!run.completed && guard++ < 300) {
       const stage = D.STAGES[run.idx];
@@ -889,7 +933,7 @@
           return false;
         }
         if (run.completed || run.idx !== stageStartIdx) break; // 胜利并推进
-        if (attempts > 10) {
+        if (attempts > maxAttempts) {
           if (global.console) console.error('多次失败放弃关卡：', stage.title);
           return false;
         }
