@@ -83,11 +83,10 @@
     const foeKey = foe.key;
     const lists = {
       sun_xiaochuan: [
-        // 抽象圣经最优先：铺垫终极奥义 4 倍 + 敌方失控自保（需 AP 充足才打）
-        { cardId: 'abstract_bible', cond: function () { return !Game.hasStatus(foeKey, 'abstract') && ai.ap >= 3; } },
-        { cardId: 'cyber_storm', cond: function () { return !Game.hasStatus(foeKey, 'cyber_storm') && ai.ap >= 3; } },
         { cardId: 'shouting', cond: function () { return !Game.hasStatus(foeKey, 'shut_up'); } },
         { cardId: 'elegant', cond: function () { return !Game.hasStatus(foeKey, 'shut_up'); } },
+        { cardId: 'abstract_bible', cond: function () { return !Game.hasStatus(foeKey, 'abstract'); } },
+        { cardId: 'cyber_storm', cond: function () { return !Game.hasStatus(foeKey, 'cyber_storm'); } },
         { cardId: 'dog_fans', cond: function () {
           return foe.hand.length >= 2 || (foe.hand.length === 0 && !Game.hasStatus(foeKey, 'dog_fans_siege'));
         } },
@@ -132,8 +131,8 @@
     });
     if (lethal) return { type: 'play', index: playableIndex(key, lethal) };
 
-    // ---------- P1 保命：HP < 40%（Boss 战更早回血） ----------
-    if (ai.hp < ai.maxHp * 0.4) {
+    // ---------- P1 保命：HP < 30% ----------
+    if (ai.hp < ai.maxHp * 0.3) {
       const healId = HEAL_SPELLS[charId];
       if (healId) {
         const card = ai.hand.find(function (c) { return c.def.id === healId; });
@@ -147,50 +146,14 @@
       }
     }
 
-    // ---------- P1.5 净化：低血量/中 debuff 时优先净化（不耗 AP、不结束回合） ----------
-    if (!Game.hasStatus(key, 'dog_fans_siege') && ai.hp < ai.maxHp * 0.65) {
-      const hasNegative = ai.statuses.some(function (s) {
-        const d = Game.getStatusDef(s.id);
-        return d && d.kind === 'negative';
-      });
-      const si = hasNegative ? itemIndex(key, SPRAY_ITEM) : -1;
-      if (si >= 0) return { type: 'item', index: si };
-    }
-
-    // ---------- P1.8 蓄力攒 AP：终极奥义在手且敌方进入斩杀线（HP<50%），AP<5 时保留 AP ----------
-    // （每回合 +3 AP 且可跨回合保留；低血才蓄力，避免拖成消耗战给 Boss 回血时间）
-    if (ultId && ai.ap < 5) {
-      const ult = ai.hand.find(function (c) { return c.def.id === ultId; });
-      const foeClose = foe.hp < foe.maxHp * 0.5;
-      if (ult && foeClose) {
-        const link = LINK_STATUS[charId];
-        // 蓄力期间只允许：铺垫联动状态 / 半血以下防御
-        if (link && !Game.hasStatus(foeKey, link)) {
-          const linkCard = ai.hand.find(function (c) { return c.def.id === 'abstract_bible'; });
-          const li = linkCard ? playableIndex(key, linkCard) : -1;
-          if (li >= 0 && ai.ap >= 3) return { type: 'play', index: li };
-        }
-        const defCard = ai.hand.find(function (c) { return c.def.type === 'defense'; });
-        const di = defCard ? playableIndex(key, defCard) : -1;
-        if (di >= 0 && ai.hp < ai.maxHp * 0.5) return { type: 'play', index: di };
-        return null; // 蓄力：提前结束回合，保留 AP
-      }
-    }
-
-    // ---------- P2 斩杀：AP>=5 + 终极奥义 + 敌方HP<65% 或处于联动状态 ----------
+    // ---------- P2 斩杀：AP>=5 + 终极奥义 + 敌方HP<50% 或处于联动状态 ----------
     const ultId = ULTIMATE_IDS[charId];
     if (ultId && ai.ap >= 5) {
       const ult = ai.hand.find(function (c) { return c.def.id === ultId; });
       const ui = ult ? playableIndex(key, ult) : -1;
       const link = LINK_STATUS[charId];
-      if (ui >= 0 && (foe.hp < foe.maxHp * 0.65 || (link && Game.hasStatus(foeKey, link)))) {
+      if (ui >= 0 && (foe.hp < foe.maxHp * 0.5 || (link && Game.hasStatus(foeKey, link)))) {
         return { type: 'play', index: ui };
-      }
-      // 终极在手但敌方没有联动状态 → 先铺联动（孙笑川：抽象圣经 3 费）
-      if (ui >= 0 && link && !Game.hasStatus(foeKey, link)) {
-        const linkCard = ai.hand.find(function (c) { return c.def.id === 'abstract_bible'; });
-        const li = linkCard ? playableIndex(key, linkCard) : -1;
-        if (li >= 0 && ai.ap >= 5) return { type: 'play', index: li };
       }
     }
 
@@ -212,20 +175,11 @@
       }
     }
 
-    // ---------- P4 防守：低血 / 敌方高攻时提前防御 ----------
-    {
-      const foeAtk = Game.currentAttack(foeKey);
-      const myDef = Game.currentDefense(key);
-      const foeThreat = foeAtk - myDef; // 敌方一次普通攻击的基础伤害
-      const lowHp = ai.hp < ai.maxHp * 0.35;
-      const underPressure = foeThreat >= 15 && ai.hp < ai.maxHp * 0.5;
-      const foeBuffed = (Game.hasStatus(foeKey, 'story_fury') || Game.hasStatus(foeKey, 'story_might')) &&
-                        ai.hp < ai.maxHp * 0.55;
-      if (lowHp || underPressure || foeBuffed) {
-        const defCard = ai.hand.find(function (c) { return c.def.type === 'defense'; });
-        const di = defCard ? playableIndex(key, defCard) : -1;
-        if (di >= 0) return { type: 'play', index: di };
-      }
+    // ---------- P4 防守：HP < 40% 且持有防御牌 ----------
+    if (ai.hp < ai.maxHp * 0.4) {
+      const defCard = ai.hand.find(function (c) { return c.def.type === 'defense'; });
+      const di = defCard ? playableIndex(key, defCard) : -1;
+      if (di >= 0) return { type: 'play', index: di };
     }
 
     // ---------- 提速抢跑：当前有效速度落后时，先给自己提速 ----------
@@ -245,8 +199,6 @@
     }
 
     // ---------- P6 常规攻击：费用低 → 伤害高 → 附加效果 ----------
-    // 注：网暴风暴（3 费 1.5 倍 + 30% 施加增伤）在敌方未带增伤状态时优先打，
-    // 长期收益显著（后续每张牌 +30% 伤害）。
     const attacks = ai.hand
       .map(function (c, i) {
         return {
@@ -260,12 +212,6 @@
         return x.card.def.type === 'attack' && x.card.def.id !== ultId && x.cost <= ai.ap;
       });
     if (attacks.length > 0) {
-      const foeStorm = Game.hasStatus(foeKey, 'cyber_storm') || Game.hasStatus(foeKey, 'consumption_storm');
-      const storm = attacks.find(function (x) {
-        return (x.card.def.id === 'cyber_storm' || x.card.def.id === 'tax_storm') &&
-               !foeStorm && x.cost >= 3;
-      });
-      if (storm && ai.ap >= 3) return { type: 'play', index: storm.index };
       attacks.sort(function (a, b) {
         if (a.cost !== b.cost) return a.cost - b.cost;       // 费用低
         if (b.dmg !== a.dmg) return b.dmg - a.dmg;           // 伤害高
@@ -278,7 +224,7 @@
       return { type: 'play', index: attacks[0].index };
     }
 
-    // ---------- 净化喷雾：血量偏低且带负面状态（兜底路径，P1.5 已优先处理） ----------
+    // ---------- 净化喷雾：血量偏低且带负面状态 ----------
     if (!Game.hasStatus(key, 'dog_fans_siege') && ai.hp < ai.maxHp * 0.55) {
       const hasNegative = ai.statuses.some(function (s) {
         const d = Game.getStatusDef(s.id);

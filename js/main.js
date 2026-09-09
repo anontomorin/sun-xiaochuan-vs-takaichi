@@ -389,39 +389,6 @@
   }
 
   // ------------------------------------------------------------------
-  // 素材预加载：全部美术资源加载完毕后方可进入游戏（进度条驱动）
-  // ------------------------------------------------------------------
-  function preloadAssets(onDone) {
-    const list = (global.ART_ASSETS && global.ART_ASSETS.length) ? global.ART_ASSETS : null;
-    const bar = $('loading-bar-fill');
-    const pct = $('loading-pct');
-    const hint = $('loading-hint');
-    if (!list) { if (onDone) onDone(); return; }
-    let done = 0;
-    let started = false;
-    function tick() {
-      done += 1;
-      const p = Math.min(100, Math.round(done / list.length * 100));
-      if (bar) bar.style.width = p + '%';
-      if (pct) pct.textContent = p + '%';
-      if (done >= list.length && onDone) onDone();
-    }
-    function kick() {
-      if (started) return;
-      started = true;
-      if (hint) hint.textContent = '正在加载美术素材… ' + list.length + ' 个资源';
-      list.forEach(function (src) {
-        const img = new Image();
-        img.onload = tick;
-        img.onerror = tick; // 缺失资源不阻塞进入（游戏内有 Emoji 回退）
-        img.src = src;
-      });
-    }
-    // 延迟一拍让进度条首帧渲染；file:// 下图片从磁盘缓存读取，通常瞬间完成
-    setTimeout(kick, 30);
-  }
-
-  // ------------------------------------------------------------------
   // 启动
   // ------------------------------------------------------------------
   function boot() {
@@ -432,12 +399,7 @@
     bindCodexEvents();
     bindSettingsEvents();
     bindErrorTrap();
-    // 素材全部加载完毕后，才显示首页进入游戏
-    preloadAssets(function () {
-      UI.showHomeScreen();
-      const lo = $('loading-overlay');
-      if (lo) lo.classList.add('hidden');
-    });
+    UI.showHomeScreen();
   }
 
   if (document.readyState === 'loading') {

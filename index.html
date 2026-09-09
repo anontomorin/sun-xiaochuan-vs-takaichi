@@ -8,26 +8,6 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <!-- ==================== 素材加载进度条（加载完成前阻止进入游戏） ==================== -->
-  <div id="loading-overlay">
-    <div class="loading-inner">
-      <div class="loading-title">孙笑川大战高市早苗</div>
-      <div class="loading-sub">ABSTRACT FORCE · SHOWA AFTERIMAGE</div>
-      <div class="loading-bar"><div id="loading-bar-fill" class="loading-bar-fill"></div></div>
-      <div id="loading-pct" class="loading-pct">0%</div>
-      <div class="loading-hint">正在加载美术素材…</div>
-    </div>
-  </div>
-
-  <!-- ==================== 横屏判定门禁（设备非横屏时无法进入游戏） ==================== -->
-  <div id="rotate-overlay" class="hidden">
-    <div class="rotate-inner">
-      <div class="rotate-icon" aria-hidden="true"></div>
-      <div class="rotate-title">请横屏游玩</div>
-      <div class="rotate-desc">本游戏为横屏卡牌对战，请将设备旋转为横屏后进入。</div>
-    </div>
-  </div>
-
   <div id="app">
 
     <!-- ==================== 游戏首页（横屏全幅美术封面） ==================== -->
@@ -327,7 +307,6 @@
   <div id="turn-banner" class="turn-banner hidden"></div>
   <div id="fx-layer" class="fx-layer" aria-hidden="true"></div>
 
-  <script src="js/assets.js"></script>
   <script src="js/characters.js"></script>
   <script src="js/cards.js"></script>
   <script src="js/game.js"></script>
