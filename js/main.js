@@ -31,7 +31,9 @@
       const c = Characters.CHARACTERS[id];
       const total = c.deckSpec.reduce(function (sum, d) { return sum + d.count; }, 0);
       return '<div class="char-card" data-char="' + id + '">' +
-        '<div class="char-emoji">' + c.emoji + '</div>' +
+        '<div class="char-emoji">' + (c.art
+          ? '<img class="av-img" src="' + c.art + '" alt="' + c.name + '">'
+          : c.emoji) + '</div>' +
         '<div class="char-name">' + c.name + '</div>' +
         '<div class="char-tag">' + c.tagline + '</div>' +
         '<ul class="char-stats">' +
@@ -67,6 +69,10 @@
 
   function startFreeBattle() {
     if (!selectedCharId) { UI.toast('请先选择角色'); return; }
+    // v2.1 美术重制：自由对战使用战斗大厅底图
+    if (typeof UI.setBattleBg === 'function') {
+      UI.setBattleBg('assets/img/art/ui/battle_bg.png');
+    }
     UI.showBattleScreen();
     Game.restart();
     const auto = $('cb-auto') ? $('cb-auto').checked : false;

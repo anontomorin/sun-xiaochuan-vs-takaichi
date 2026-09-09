@@ -2,7 +2,7 @@
  * data.js —— 2.0 故事模式数据模块
  * 集中管理：孙笑川初始档案/牌组、11 阶段（敌人数值+技能+剧情）、奖励与被动。
  * 对白格式：每一条 = [说话人, 文本]；说话人 sun/enemy/sys；
- *           {scene:'场景标题'} 表示场景标题卡；{fx:'flash'|'shake'|'danmaku'} 为演出效果。
+ *           {scene:'场景标题'} 表示场景标题卡；{fx:'flash'|'shake'|'crash'|'boss'|'auto_click'} 为演出效果。
  */
 (function (global) {
   'use strict';
@@ -31,15 +31,15 @@
 
   // 被动定义
   S.PASSIVES = {
-    bushidou: { id: 'bushidou', name: '军国不再的武士道', icon: '⚔️',
+    bushidou: { id: 'bushidou', name: '军国不再的武士道', icon: '⚔️', art: 'assets/img/art/icons/passive_bushidou.png',
       desc: '每 2 个战斗回合：攻击力 +5%（向上取整，本场内叠加）。' },
-    shouwa_voice: { id: 'shouwa_voice', name: '昭和的声音', icon: '📻',
+    shouwa_voice: { id: 'shouwa_voice', name: '昭和的声音', icon: '📻', art: 'assets/img/art/icons/passive_showa.png',
       desc: '每 2 个战斗回合：获得 1 张【昭和】卡（1AP，攻击力+50% 持续 2 回合）。' },
-    cheap_pot: { id: 'cheap_pot', name: '廉价小锅', icon: '🍲',
+    cheap_pot: { id: 'cheap_pot', name: '廉价小锅', icon: '🍲', art: 'assets/img/art/icons/passive_pot.png',
       desc: '每回合开始：AP +1、HP +20。' },
-    gun: { id: 'gun', name: '日服男枪', icon: '🔫',
+    gun: { id: 'gun', name: '日服男枪', icon: '🔫', art: 'assets/img/art/icons/passive_gun.png',
       desc: '每回合对敌人额外造成 10 点伤害，并有 5% 概率直接秒杀。' },
-    naihuo: { id: 'naihuo', name: '耐活王', icon: '🧱',
+    naihuo: { id: 'naihuo', name: '耐活王', icon: '🧱', art: 'assets/img/art/icons/passive_turtle.png',
       desc: '每 2 个战斗回合：防御力 +10%（向上取整，本场内叠加）。' }
   };
 
@@ -326,7 +326,6 @@
   S.PROLOGUE = [
     { scene: '序章：被选中的抽象者' },
     { scene: '成都出租屋 · 深夜直播中' },
-    { fx: 'danmaku', danmaku: ['孙狗又在嘴硬', '主播能不能表演一下那个', '你根本不会玩'] },
     ['sun', '你们这些狗粉丝，天天来直播间找存在感。你吼那么大声干什么嘛！'],
     ['sun', '我打得菜？我打得菜你去找物管啊！'],
     { fx: 'crash' },
@@ -344,7 +343,6 @@
     ['sys', '你的任务很简单。击败 11 个阶段的敌人。最终击败高市早苗。清除招核残影。'],
     ['sun', '我不干呢？'],
     ['sys', '拒绝任务。宿主将永久困于招核空间。'],
-    { fx: 'danmaku', danmaku: ['（画面闪出孙笑川与东条英机一起跳诡异舞蹈的画面……）'] },
     ['sun', '……'],
     ['sun', '爬。先看看第一关是哪个倒霉蛋。'],
     { scene: '主线任务开始：讨伐 11 个阶段' }
@@ -354,9 +352,7 @@
   S.ENDING = [
     { fx: 'flash' },
     { scene: '成都出租屋 · 电脑恢复正常' },
-    { fx: 'danmaku', danmaku: ['孙哥你刚刚怎么掉线了？', '主播人呢？', '刚才是不是卡了？'] },
     ['sun', '玩个蛇。老子刚刚去拯救世界。点个关注。下次带你们一起打高市早苗。'],
-    { fx: 'danmaku', danmaku: ['你又开始吹了', '主播是不是睡着了？', '根本没人信'] },
     ['sun', '滚！你们根本不爱我。'],
     { scene: '……黑屏……' },
     ['sys', '招核危机已解除。宿主获得称号：【招核讨伐者】。'],

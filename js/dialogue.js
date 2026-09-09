@@ -25,6 +25,8 @@
       root.appendChild(el);
       return el;
     }
+    // v2.1 美术重制：场景美术底图层（按场景文本匹配 bg_01..bg_16）
+    els.bg = child('div', 'dlg-bg');
     child('div', 'dlg-bar dlg-bar-top');
     child('div', 'dlg-bar dlg-bar-bottom');
     els.fx = child('div', 'dlg-fxlayer');
@@ -36,6 +38,35 @@
     els.skip = child('button', 'dlg-skip', 'dlg-skip', '⏭ 跳过');
     els.skip.title = '跳过本段剧情';
     document.body.appendChild(root);
+  }
+
+  // 场景文本 → 美术底图（按关键词匹配，顺序即优先级）
+  const SCENE_BG = [
+    ['序章', 'bg_01'],
+    ['蓝屏', 'bg_02'],
+    ['老东京街道', 'bg_05'],
+    ['东京街道', 'bg_03'],
+    ['诡异舞蹈', 'bg_04'],
+    ['小卖部', 'bg_07'],
+    ['审判', 'bg_08'],
+    ['居酒屋', 'bg_09'],
+    ['办公室', 'bg_10'],
+    ['温泉', 'bg_11'],
+    ['奈良', 'bg_12'],
+    ['网吧', 'bg_13'],
+    ['屋顶', 'bg_15'],
+    ['议事堂', 'bg_14'],
+    ['恢复正常', 'bg_16'],
+    ['出租屋', 'bg_01']
+  ];
+  function sceneBg(text) {
+    if (!text) return null;
+    for (let i = 0; i < SCENE_BG.length; i++) {
+      if (text.indexOf(SCENE_BG[i][0]) >= 0) {
+        return 'assets/img/art/bg/' + SCENE_BG[i][1] + '.png';
+      }
+    }
+    return null;
   }
 
   const DEFAULT_NAMES = { sun: '孙笑川', enemy: '？？？', sys: '系统' };
@@ -167,6 +198,11 @@
       els.speaker.className = 'dlg-speaker scene';
       els.portrait.className = 'dlg-portrait scene';
       els.portrait.innerHTML = '';
+      // v2.1 美术重制：按场景切换背景
+      const bg = sceneBg(text);
+      if (bg) {
+        els.bg.style.backgroundImage = 'url("' + bg + '")';
+      }
       els.scene.textContent = text;
       els.scene.classList.remove('hide');
       void els.scene.offsetWidth;
@@ -218,9 +254,12 @@
       const text = String(item[1] === undefined ? '' : item[1]);
       const names = (current.opts && current.opts.names) || DEFAULT_NAMES;
       const icons = (current.opts && current.opts.icons) || DEFAULT_ICONS;
-      // 默认：孙笑川说话即用其本人照片；其它角色由调用方指定
+      // v2.1 美术重制：默认说话人立绘 = 本地美术资源；调用方可覆盖
       const portraits = Object.assign(
-        { sun: 'sun_xiaochuan' },
+        {
+          sun: 'assets/img/art/characters/sun.png',
+          sys: 'assets/img/art/characters/sys.png'
+        },
         (current.opts && current.opts.portraits) || {}
       );
       const boss = current.opts && current.opts.boss;
@@ -232,13 +271,20 @@
       els.speaker.textContent = name;
       els.speaker.className = 'dlg-speaker ' + who + (boss ? ' boss' : '');
       els.portrait.className = 'dlg-portrait ' + who + (boss ? ' boss' : '');
-      // 照片头像：说话人映射到角色 ID 且照片已加载 → 使用真实照片
+      // 立绘头像：说话人 → 立绘路径（本地美术 > 照片 > Emoji）
       let portraitHTML = '<span class="dp-icon">' + icon + '</span>';
-      const cid = portraits[who];
-      const cdef = (cid && global.Characters && global.Characters.CHARACTERS[cid]) || null;
-      if (cdef && cdef.photo && cdef.photoOk) {
-        portraitHTML = '<img class="dp-photo" src="' + cdef.photo +
-          '" alt="' + (cdef.name || '') + '">';
+      const pv = portraits[who];
+      if (pv) {
+        const cdef = (global.Characters && global.Characters.CHARACTERS[pv]) || null;
+        if (cdef) {
+          if (cdef.art && cdef.artOk !== false) {
+            portraitHTML = '<img class="dp-photo" src="' + cdef.art + '" alt="' + (cdef.name || '') + '">';
+          } else if (cdef.photo && cdef.photoOk) {
+            portraitHTML = '<img class="dp-photo" src="' + cdef.photo + '" alt="' + (cdef.name || '') + '">';
+          }
+        } else {
+          portraitHTML = '<img class="dp-photo" src="' + pv + '" alt="' + String(name).replace(/[<>&"]/g, '') + '">';
+        }
       }
       els.portrait.innerHTML = portraitHTML;
       typeText(text);

@@ -15,6 +15,33 @@
   let activeStage = null; // 当前关卡（战斗中用）
   let battleBusy = false;
 
+  // ---------------- v2.1 美术重制 ----------------
+  // 战斗关卡 → 关卡场景底图（bg_01..bg_16 为对应剧情场景美术）
+  const STAGE_BG = {
+    1: 'assets/img/art/bg/bg_05.png',   // 第一关·老东京街道
+    2: 'assets/img/art/bg/bg_06.png',   // 第二关·昭和旧街区
+    4: 'assets/img/art/bg/bg_08.png',   // Boss·东京审判遗址
+    5: 'assets/img/art/bg/bg_09.png',   // 第五关·居酒屋
+    6: 'assets/img/art/bg/bg_10.png',   // 第六关·深夜办公室
+    8: 'assets/img/art/bg/bg_12.png',   // Boss·奈良街道
+    9: 'assets/img/art/bg/bg_13.png',   // 第九关·网吧包间
+    11: 'assets/img/art/bg/bg_15.png'   // 最终Boss·国会屋顶
+  };
+  // 战斗关卡 → 敌人立绘（e1/e2/e5/e6/e9 普通，eb1/eb2/eb3 Boss）
+  const ENEMY_ART = {
+    1: 'e1', 2: 'e2', 4: 'eb1', 5: 'e5', 6: 'e6', 8: 'eb2', 9: 'e9', 11: 'eb3'
+  };
+  function enemyArtOf(stage) {
+    const f = ENEMY_ART[stage && stage.id];
+    return f ? 'assets/img/art/enemies/' + f + '.png' : null;
+  }
+  // 故事地图：11 个节点沿美术底图 story_map.png 的发光道路放置
+  // （道路从左下「出租屋」蜿蜒至右上「宝塔」，坐标为像素检测得到的灯盏质心）
+  const MAP_NODE_POS = [
+    [22, 80], [33, 73], [43, 63], [50, 54], [57, 49], [64, 44],
+    [70, 39], [75, 33], [81, 28], [87, 24], [92, 19]
+  ];
+
   // ---------------- DOM 基础 ----------------
   function h(html) { const t = document.createElement('div'); t.innerHTML = html.trim(); return t.firstChild; }
 
@@ -168,7 +195,11 @@
 
   function statCard(r) {
     const pv = r.passives.map(function (id) {
-      const p = D.PASSIVES[id]; return p ? p.icon : '';
+      const p = D.PASSIVES[id];
+      if (!p) return '';
+      return p.art
+        ? '<img class="passive-art" src="' + p.art + '" title="' + p.name + '：' + p.desc + '" alt="' + p.name + '">'
+        : p.icon;
     }).join(' ');
     return '<div class="st-run-stats"><span>❤️ ' + r.hp + '/' + r.maxHp + '</span>' +
       '<span>⚔️ ' + r.attack + '</span><span>🛡️ ' + r.defense + '</span>' +
@@ -273,11 +304,12 @@
       const cur = i === run.idx && !done;
       const locked = i > run.idx && !run.cleared[i - 1];
       const cls = 'st-node' + (done ? ' done' : '') + (cur ? ' cur' : '') + (locked ? ' lock' : '');
-      html += '<div class="' + cls + '" data-i="' + i + '">' +
+      const pos = MAP_NODE_POS[i] || [50, 50];
+      html += '<div class="' + cls + '" data-i="' + i + '" style="left:' + pos[0] + '%;top:' + pos[1] + '%">' +
         '<span class="st-node-ic">' + (done ? '✅' : stageIcon(s)) + '</span>' +
-        '<span class="st-node-name">' + (i + 1) + '. ' + s.title + '</span>' +
+        '<span class="st-node-idx">' + (i + 1) + '</span>' +
+        '<span class="st-node-name">' + (done ? s.title : s.title) + '</span>' +
         '</div>';
-      if (i < D.STAGES.length - 1) html += '<div class="st-arrow">↓</div>';
     });
     html += '<div class="st-map-actions">' +
       (stage && !run.cleared[run.idx]
@@ -308,14 +340,21 @@
       name: stage.name,
       emoji: stage.emoji,
       tag: stage.tag || '招核残影',
-      characterId: 'story_' + stage.id
+      characterId: 'story_' + stage.id,
+      // v2.1 美术重制：敌人立绘
+      art: enemyArtOf(stage)
     }, stage.enemy);
   }
 
-  // 说话人 → 角色照片映射（高市早苗仅在最终战以“enemy”出现）
+  // 说话人 → 立绘映射（高市早苗仅在最终战以“enemy”出现）
   function portraitsFor(stage) {
-    const m = { sun: 'sun_xiaochuan' };
-    if (stage && (stage.id === 11 || stage.name === '高市早苗')) m.enemy = 'takaichi_sanae';
+    const m = { sun: Characters.CHARACTERS.sun_xiaochuan.art || 'assets/img/art/characters/sun.png' };
+    if (stage && (stage.id === 11 || stage.name === '高市早苗')) {
+      m.enemy = Characters.CHARACTERS.takaichi_sanae.art || 'assets/img/art/characters/sanae.png';
+    } else {
+      const ea = enemyArtOf(stage);
+      if (ea) m.enemy = ea;
+    }
     return m;
   }
 
@@ -357,6 +396,10 @@
     G.state.storyStageType = stage.type;
     G.state.storyStageNum = stage.id;
     G.state.storyStageTitle = stage.title;
+    // v2.1 美术重制：按关卡切换战斗底图
+    if (global.UI && typeof UI.setBattleBg === 'function') {
+      UI.setBattleBg(STAGE_BG[stage.id] || 'assets/img/art/ui/battle_bg.png');
+    }
     UI.showBattleScreen();
     G.startStoryBattle(profileOf(), enemyView(stage));
   }
@@ -641,7 +684,8 @@
       '<div class="st-reward-card"><div class="rc-name">' + (rw.title || '属性提升') + '</div>' +
       '<div class="rc-desc">' + (rw.explain || '') + '</div></div>' +
       (passiveGot ? '<div class="st-reward-card rc-passive"><div class="rc-name">' +
-        passiveGot.icon + ' ' + passiveGot.name + '</div><div class="rc-desc">' +
+        (passiveGot.art ? '<img class="passive-art" src="' + passiveGot.art + '" alt="">' : passiveGot.icon) + ' ' +
+        passiveGot.name + '</div><div class="rc-desc">' +
         passiveGot.desc + '</div></div>' : '') +
       '<div class="modal-buttons"><button class="btn btn-primary" data-ok>领取</button></div></div></div>');
     document.body.appendChild(ov);
@@ -747,7 +791,10 @@
       '<h1 class="st-end-title">🏆 ' + (archived ? '通关档案' : '恭喜通关！') + '</h1>' +
       '<p class="st-end-sub">宿主获得称号：【招核讨伐者】</p>' + statCard(run) +
       '<div class="st-end-passives">' + run.passives.map(function (id) {
-        const p = D.PASSIVES[id]; return p ? '<div class="rc-passive st-reward-card"><div class="rc-name">' + p.icon + ' ' + p.name + '</div><div class="rc-desc">' + p.desc + '</div></div>' : '';
+        const p = D.PASSIVES[id];
+        return p ? '<div class="rc-passive st-reward-card"><div class="rc-name">' +
+          (p.art ? '<img class="passive-art" src="' + p.art + '" alt="">' : p.icon) + ' ' + p.name +
+          '</div><div class="rc-desc">' + p.desc + '</div></div>' : '';
       }).join('') + '</div>' +
       '<div class="modal-buttons"><button class="btn btn-ghost" data-home>返回主菜单</button></div></div>';
     viewEl.querySelector('.st-back').addEventListener('click', Story.leave);

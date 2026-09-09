@@ -588,6 +588,8 @@
     e.emoji = enemyDef.emoji || '👾';
     e.tagline = enemyDef.tag || '招核残影';
     e.characterId = enemyDef.characterId || ('story_' + enemyDef.id);
+    // v2.1 美术重制：透传敌人立绘（本地美术资源，供头像渲染）
+    e.art = enemyDef.art || null;
     e.maxHp = enemyDef.hp;
     e.hp = enemyDef.hp;
     e.attack = enemyDef.atk || 0;

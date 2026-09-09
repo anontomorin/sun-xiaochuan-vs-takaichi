@@ -2,40 +2,36 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="孙笑川大战高市早苗 - 纯原生 HTML5 单机回合制卡牌对战">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="孙笑川大战高市早苗 - 纯原生 HTML5 单机回合制卡牌对战（横屏美术重制版）">
   <title>孙笑川大战高市早苗 - 回合制卡牌对战</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div id="app">
 
-    <!-- ==================== 游戏首页 ==================== -->
+    <!-- ==================== 游戏首页（横屏全幅美术封面） ==================== -->
     <section id="screen-home" class="screen hidden">
-      <div class="home-floaty f1">😎</div>
-      <div class="home-floaty f2">👩‍💼</div>
-      <div class="home-floaty f3">🃏</div>
-      <div class="home-floaty f4">🪖</div>
-      <div class="home-floaty f5">🌀</div>
-      <div class="home-floaty f6">⛩️</div>
-      <div class="home-inner v2-home">
-        <div class="logo-avatars">
-          <span class="logo-av av-sun">😎</span>
-          <span class="logo-vs">VS</span>
-          <span class="logo-av av-sanae">👩‍💼</span>
+      <div class="home-bg" aria-hidden="true"></div>
+      <div class="home-scrim" aria-hidden="true"></div>
+      <div class="home-inner">
+        <div class="home-top">
+          <p class="home-kicker">ABSTRACT FORCE · SHOWA AFTERIMAGE · CRT</p>
+          <h1 class="logo-title">孙笑川大战高市早苗</h1>
+          <p class="logo-sub">抽象之力 VS 招核残影</p>
         </div>
-        <h1 class="logo-title">孙笑川大战高市早苗</h1>
-        <p class="logo-sub">抽象之力 VS 招核残影</p>
-        <div class="v2-menu">
-          <button id="btn-story" class="btn btn-big btn-primary">🎬 故事模式</button>
-          <button id="btn-free" class="btn btn-big btn-primary">⚔️ 自由对战</button>
-          <button id="btn-codex" class="btn btn-big btn-ghost">🃏 卡牌图鉴</button>
-          <button id="btn-status-codex" class="btn btn-big btn-ghost">🌀 状态图鉴</button>
-          <button id="btn-rules" class="btn btn-big btn-ghost">📖 游戏说明</button>
-          <button id="btn-settings" class="btn btn-big btn-ghost">⚙️ 设置</button>
+        <div class="home-bottom">
+          <div class="v2-menu">
+            <button id="btn-story" class="btn btn-big btn-primary">🎬 故事模式</button>
+            <button id="btn-free" class="btn btn-big btn-primary">⚔️ 自由对战</button>
+            <button id="btn-codex" class="btn btn-big btn-ghost">🃏 卡牌图鉴</button>
+            <button id="btn-status-codex" class="btn btn-big btn-ghost">🌀 状态图鉴</button>
+            <button id="btn-rules" class="btn btn-big btn-ghost">📖 游戏说明</button>
+            <button id="btn-settings" class="btn btn-big btn-ghost">⚙️ 设置</button>
+          </div>
+          <p class="home-foot">v2.1 美术重制版 · 作者 anontomorin · 剧情模式流程设计 清蒸鱼是也 · 纯原生 HTML5/CSS3/JS · 双击 index.html 即可运行 · 无需联网</p>
+          <button id="btn-dev-statement" class="dev-link">📜 开发者声明</button>
         </div>
-        <p class="home-foot">v2.0 · 作者 anontomorin · 剧情模式流程设计 清蒸鱼是也 · 纯原生 HTML5/CSS3/JS · 双击 index.html 即可运行 · 无需联网</p>
-        <button id="btn-dev-statement" class="dev-link">📜 开发者声明</button>
       </div>
     </section>
 
@@ -56,8 +52,11 @@
       <button id="btn-rules" class="btn btn-ghost">📜 玩法说明</button>
     </section>
 
-    <!-- ==================== 战斗界面 ==================== -->
+    <!-- ==================== 战斗界面（横屏：敌区｜舞台｜我区 + 底部手牌与操作） ==================== -->
     <section id="screen-battle" class="screen hidden">
+      <div class="battle-bg" id="battle-bg" aria-hidden="true"></div>
+      <div class="battle-scrim" aria-hidden="true"></div>
+
       <div class="battle-topbar">
         <div id="turn-badge" class="turn-badge">第 1 回合</div>
         <div class="vs-title">😎 VS 👩‍💼</div>
@@ -65,84 +64,87 @@
         <button id="btn-sound" class="btn-sound" title="音效开关">🔊</button>
       </div>
 
-      <!-- 敌方区域 -->
-      <div class="zone zone-enemy" id="zone-enemy">
-        <div class="avatar-box">
-          <div class="avatar" id="avatar-enemy">👩‍💼</div>
-          <div class="hand-count" id="handcount-enemy" title="手牌数量">🂠 0</div>
-        </div>
-        <div class="zone-body">
-          <div class="zone-head">
-            <span class="zone-name" id="name-enemy">敌方</span>
-            <span class="zone-tag" id="tag-enemy"></span>
-            <span class="zone-speed" id="speed-enemy"></span>
+      <!-- 中央战斗区：敌方 | 舞台 | 我方 -->
+      <div class="arena">
+        <!-- 敌方区域 -->
+        <div class="zone zone-enemy" id="zone-enemy">
+          <div class="avatar-box">
+            <div class="avatar" id="avatar-enemy">👩‍💼</div>
+            <div class="hand-count" id="handcount-enemy" title="手牌数量">🂠 0</div>
           </div>
-          <div class="bar-row">
-            <span class="bar-label">HP</span>
-            <div class="hp-bar">
-              <div class="hp-fill" id="hpfill-enemy"></div>
-              <span class="hp-text" id="hptext-enemy">0/0</span>
+          <div class="zone-body">
+            <div class="zone-head">
+              <span class="zone-name" id="name-enemy">敌方</span>
+              <span class="zone-tag" id="tag-enemy"></span>
+              <span class="zone-speed" id="speed-enemy"></span>
             </div>
+            <div class="bar-row">
+              <span class="bar-label">HP</span>
+              <div class="hp-bar">
+                <div class="hp-fill" id="hpfill-enemy"></div>
+                <span class="hp-text" id="hptext-enemy">0/0</span>
+              </div>
+            </div>
+            <div class="bar-row bar-row-ap">
+              <span class="bar-label">AP</span>
+              <div class="ap-pips" id="appips-enemy"></div>
+              <span class="ap-text" id="aptext-enemy">0/10</span>
+            </div>
+            <div class="status-row" id="statuses-enemy"></div>
+            <div class="zone-meta" id="meta-enemy"></div>
           </div>
-          <div class="bar-row bar-row-ap">
-            <span class="bar-label">AP</span>
-            <div class="ap-pips" id="appips-enemy"></div>
-            <span class="ap-text" id="aptext-enemy">0/10</span>
+        </div>
+
+        <!-- 中央舞台 -->
+        <div class="stage" id="stage">
+          <div class="stage-side stage-player">
+            <div class="avatar big" id="stage-avatar-player">😎</div>
+            <div class="stage-name" id="stage-name-player">孙笑川</div>
           </div>
-          <div class="status-row" id="statuses-enemy"></div>
-          <div class="zone-meta" id="meta-enemy"></div>
+          <div class="stage-middle">
+            <div class="vs-mark">VS</div>
+            <div id="stage-hint" class="stage-hint">战斗开始…</div>
+          </div>
+          <div class="stage-side stage-enemy">
+            <div class="avatar big" id="stage-avatar-enemy">👩‍💼</div>
+            <div class="stage-name" id="stage-name-enemy">高市早苗</div>
+          </div>
+        </div>
+
+        <!-- 己方区域 -->
+        <div class="zone zone-player" id="zone-player">
+          <div class="avatar-box">
+            <div class="avatar" id="avatar-player">😎</div>
+            <div class="hand-count" id="handcount-player" title="手牌数量">🂠 0</div>
+          </div>
+          <div class="zone-body">
+            <div class="zone-head">
+              <span class="zone-name" id="name-player">我方</span>
+              <span class="zone-tag" id="tag-player"></span>
+              <span class="zone-speed" id="speed-player"></span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">HP</span>
+              <div class="hp-bar">
+                <div class="hp-fill" id="hpfill-player"></div>
+                <span class="hp-text" id="hptext-player">0/0</span>
+              </div>
+            </div>
+            <div class="bar-row bar-row-ap">
+              <span class="bar-label">AP</span>
+              <div class="ap-pips" id="appips-player"></div>
+              <span class="ap-text" id="aptext-player">0/10</span>
+            </div>
+            <div class="status-row" id="statuses-player"></div>
+            <div class="zone-meta" id="meta-player"></div>
+          </div>
         </div>
       </div>
 
-      <!-- 战斗日志 -->
+      <!-- 战斗日志（紧凑横条） -->
       <div class="log-panel">
         <div class="log-title">📜 战斗日志</div>
         <div id="log-list" class="log-list"></div>
-      </div>
-
-      <!-- 中央战斗区 -->
-      <div class="stage" id="stage">
-        <div class="stage-side stage-player">
-          <div class="avatar big" id="stage-avatar-player">😎</div>
-          <div class="stage-name" id="stage-name-player">孙笑川</div>
-        </div>
-        <div class="stage-middle">
-          <div class="vs-mark">VS</div>
-          <div id="stage-hint" class="stage-hint">战斗开始…</div>
-        </div>
-        <div class="stage-side stage-enemy">
-          <div class="avatar big" id="stage-avatar-enemy">👩‍💼</div>
-          <div class="stage-name" id="stage-name-enemy">高市早苗</div>
-        </div>
-      </div>
-
-      <!-- 己方区域 -->
-      <div class="zone zone-player" id="zone-player">
-        <div class="avatar-box">
-          <div class="avatar" id="avatar-player">😎</div>
-          <div class="hand-count" id="handcount-player" title="手牌数量">🂠 0</div>
-        </div>
-        <div class="zone-body">
-          <div class="zone-head">
-            <span class="zone-name" id="name-player">我方</span>
-            <span class="zone-tag" id="tag-player"></span>
-            <span class="zone-speed" id="speed-player"></span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">HP</span>
-            <div class="hp-bar">
-              <div class="hp-fill" id="hpfill-player"></div>
-              <span class="hp-text" id="hptext-player">0/0</span>
-            </div>
-          </div>
-          <div class="bar-row bar-row-ap">
-            <span class="bar-label">AP</span>
-            <div class="ap-pips" id="appips-player"></div>
-            <span class="ap-text" id="aptext-player">0/10</span>
-          </div>
-          <div class="status-row" id="statuses-player"></div>
-          <div class="zone-meta" id="meta-player"></div>
-        </div>
       </div>
 
       <!-- 手牌区 -->
@@ -151,22 +153,22 @@
         <div id="hand" class="hand"></div>
       </div>
 
-      <!-- 道具区 -->
-      <div class="item-area">
-        <div class="item-label">🧰 道具（使用后立即结束回合）</div>
-        <div id="item-row" class="item-row"></div>
-      </div>
-
-      <!-- 操作按钮 -->
-      <div class="action-bar">
-        <button id="btn-discard-ap" class="btn btn-action">🔄 弃牌换AP</button>
-        <button id="btn-play" class="btn btn-action btn-play" disabled>🗡️ 出牌</button>
-        <button id="btn-end" class="btn btn-action btn-end" disabled>⏩ 结束回合</button>
-      </div>
-      <div class="auto-bar">
-        <button id="btn-auto" class="btn-auto" title="开启后你的回合由 AI 代打">🤖 自动战斗</button>
-        <button id="btn-speed" class="btn-auto" title="托管/观战速度">⏩ 1x</button>
-        <span class="auto-hint">托管后你的回合由 AI 代打；取消后下一回合恢复手动</span>
+      <!-- 底部控制区：道具 + 操作 + 托管 -->
+      <div class="battle-ctl">
+        <div class="item-area">
+          <div class="item-label">🧰 道具（使用后立即结束回合）</div>
+          <div id="item-row" class="item-row"></div>
+        </div>
+        <div class="action-bar">
+          <button id="btn-discard-ap" class="btn btn-action">🔄 弃牌换AP</button>
+          <button id="btn-play" class="btn btn-action btn-play" disabled>🗡️ 出牌</button>
+          <button id="btn-end" class="btn btn-action btn-end" disabled>⏩ 结束回合</button>
+        </div>
+        <div class="auto-bar">
+          <button id="btn-auto" class="btn-auto" title="开启后你的回合由 AI 代打">🤖 自动战斗</button>
+          <button id="btn-speed" class="btn-auto" title="托管/观战速度">⏩ 1x</button>
+          <span class="auto-hint">托管后你的回合由 AI 代打；取消后下一回合恢复手动</span>
+        </div>
       </div>
     </section>
   </div>
@@ -244,13 +246,12 @@
           仅用于<b>虚构恶搞与娱乐表达</b>，不针对任何现实人物、机构或国家，
           也不代表作者的任何政治立场。若相关内容给您带来不适，请联系作者，作者会及时调整或删除。</p>
         <h4>⚖️ 版权与素材</h4>
-        <p>角色头像使用人物公开照片（已随游戏本地打包、离线运行；
-          照片版权归原作者/权利方所有，仅供非商业同人娱乐使用，请勿用于商业用途）。
+        <p>角色立绘与场景均为原创 AI 辅助美术素材（本地打包、离线运行），仅作非商业同人娱乐使用。
           游戏不含任何外部字体、音频或第三方代码资源：音效由 Web Audio API 现场合成，
           卡牌与数值全部为原创设计。代码仅用于学习交流。</p>
         <h4>🧾 免责声明</h4>
         <p>本游戏仅供娱乐，请理性娱乐、尊重他人。作者不对因游玩本游戏产生的任何后果负责。</p>
-        <p class="dev-sign">✍️ 作者 anontomorin ｜ 剧情模式流程设计 清蒸鱼是也 ｜ 版本 v2.0 ｜ 技术栈：HTML5 + CSS3 + JavaScript ES6+ ｜ 运行方式：双击 index.html</p>
+        <p class="dev-sign">✍️ 作者 anontomorin ｜ 剧情模式流程设计 清蒸鱼是也 ｜ 版本 v2.1 ｜ 技术栈：HTML5 + CSS3 + JavaScript ES6+ ｜ 运行方式：双击 index.html</p>
       </div>
       <div class="modal-buttons">
         <button id="btn-dev-close" class="btn btn-primary">知道了</button>
@@ -292,6 +293,7 @@
   <!-- ==================== 胜负界面 ==================== -->
   <div id="game-over" class="overlay hidden">
     <div class="gameover-box">
+      <div class="go-art" aria-hidden="true"></div>
       <div id="go-emoji" class="go-emoji">🎉</div>
       <h2 id="go-title" class="go-title">胜利！</h2>
       <p id="go-desc" class="go-desc"></p>

@@ -15,6 +15,8 @@
       emoji: '😎',
       // 本地头像照片（放到 assets/img/ 下即可启用；缺省自动回退 Emoji）
       photo: 'assets/img/sun_xiaochuan.png',
+      // v2.1 美术重制：风格化立绘优先于照片
+      art: 'assets/img/art/characters/sun.png',
       tagline: '嘴炮输出 · 网络梗 · 爆发',
       maxHp: 500,
       attack: 39,
@@ -42,6 +44,7 @@
       name: '高市早苗',
       emoji: '👩‍💼',
       photo: 'assets/img/takaichi_sanae.png',
+      art: 'assets/img/art/characters/sanae.png',
       tagline: '政治强人 · 防守 · 经济攻击',
       maxHp: 550,
       attack: 32,
@@ -71,18 +74,21 @@
       id: 'red_packet',
       name: '回血红包',
       icon: '🧧',
+      art: 'assets/img/art/icons/item_hp.png',
       desc: '恢复最大 HP 的 30%（不超过最大 HP）。'
     },
     purify_spray: {
       id: 'purify_spray',
       name: '净化喷雾',
       icon: '💦',
+      art: 'assets/img/art/icons/item_spray.png',
       desc: '移除所有负面状态。'
     },
     energy_coffee: {
       id: 'energy_coffee',
       name: '能量咖啡',
       icon: '☕',
+      art: 'assets/img/art/icons/item_coffee.png',
       desc: '恢复 2 AP（不超过 10）。'
     }
   };

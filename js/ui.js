@@ -144,22 +144,39 @@
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  // 头像 DOM：Emoji 兜底 + 本地照片覆盖（照片缺失/加载失败时自动回退）
+  // 头像 DOM：Emoji 兜底 + 美术立绘/本地照片覆盖（加载失败时自动回退）
+  // 优先级：风格化美术立绘(art) > 本地照片(photo) > Emoji
   function avatarInnerHTML(def, role) {
     // 战斗对象是角色定义的副本，照片信息需实时从 Characters 取
     const live = (def && def.characterId && Characters.CHARACTERS[def.characterId]) || def || {};
-    const img = (live.photo && live.photoOk)
-      ? '<img class="av-img' + (role ? ' ' + role : '') + '" src="' + esc(live.photo) +
-        '" alt="' + esc(live.name || '') + '" draggable="false">'
-      : '';
+    let img = '';
+    if (live.art && live.artOk !== false) {
+      img = '<img class="av-img' + (role ? ' ' + role : '') + '" src="' + esc(live.art) +
+        '" alt="' + esc(live.name || '') + '" draggable="false">';
+    } else if (live.photo && live.photoOk) {
+      img = '<img class="av-img' + (role ? ' ' + role : '') + '" src="' + esc(live.photo) +
+        '" alt="' + esc(live.name || '') + '" draggable="false">';
+    }
     return '<span class="ph">' + esc(live.emoji || '') + '</span>' + img;
   }
 
-  // 启动时探测本地照片是否存在（存在才用 <img>，避免破图闪烁）
+  // 启动时探测本地立绘/照片是否存在（存在才用 <img>，避免破图闪烁）
   function probePhotos() {
     if (typeof Image === 'undefined') return;
     Object.keys(Characters.CHARACTERS).forEach(function (id) {
       const c = Characters.CHARACTERS[id];
+      if (c.art) {
+        const ia = new Image();
+        ia.onload = function () {
+          c.artOk = true;
+          refreshPhotoSlots();
+          if (Game.state && Game.state.player && Game.state.phase !== Game.PHASE.SELECT) {
+            refresh();
+          }
+        };
+        ia.onerror = function () { c.artOk = false; };
+        ia.src = c.art;
+      }
       if (!c.photo) return;
       const im = new Image();
       im.onload = function () {
@@ -265,7 +282,34 @@
     const spTxt = effSp === actor.speed
       ? '速度 ' + actor.speed
       : '速度 ' + actor.speed + '（' + effSp + '）';
-    refs['speed_' + key].textContent = spTxt + ' · 攻 ' + actor.attack + ' · 防 ' + actor.defense;
+    // v2.1c：速度/攻防并入 meta 行，zone-head 只留名字+tag
+    refs['speed_' + key].textContent = '';
+
+    // v2.1b 沉浸版：zone 铺角色立绘底（立绘 > 照片 > 无）
+    // v2.2：按美术文件设置 --zone-pos，把脸部中心对齐到立绘可见区
+    const live = (actor.characterId && Characters.CHARACTERS[actor.characterId]) || actor || {};
+    const artSrc = (live.art && live.artOk !== false) ? live.art : '';
+    const zone = refs['zone_' + key];
+    if (zone) {
+      if (artSrc) {
+        // CSS url() 相对 css/style.css 解析，页面相对路径需补 ../ 前缀
+        const cssRel = artSrc.replace(/^assets\//, '../assets/');
+        zone.style.setProperty('--zone-art', 'url("' + cssRel + '")');
+        // 脸部中心（图纵坐标 %）→ background-position y（图高 150% 时 上裁=3×(fc-18.7)%）
+        const fname = String(artSrc).split('/').pop();
+        const ZONE_FACE = {
+          'sun.png': 26, 'sanae.png': 30,           // 角色半身立绘：脸中上
+          'e1.png': 38, 'e2.png': 34, 'e5.png': 34, 'e6.png': 34, 'e9.png': 34,
+          'eb1.png': 34, 'eb2.png': 34, 'eb3.png': 34 // 敌人：头部整体偏下
+        };
+        const fc = ZONE_FACE[fname] != null ? ZONE_FACE[fname] : 30;
+        const pos = Math.max(0, Math.min(100, (fc - 18.7) * 3)).toFixed(1);
+        zone.style.setProperty('--zone-pos', pos + '%');
+      } else {
+        zone.style.removeProperty('--zone-art');
+        zone.style.removeProperty('--zone-pos');
+      }
+    }
 
     const hpPct = Math.max(0, Math.min(100, actor.hp / actor.maxHp * 100));
     refs['hpfill_' + key].style.width = hpPct + '%';
@@ -291,9 +335,10 @@
     }).join('');
     refs['statuses_' + key].innerHTML = statusHtml || '<span class="no-status">无状态</span>';
 
-    // 手牌/牌库/弃牌数量
+    // 手牌/牌库/弃牌数量（meta 行合并速度与攻防）
     refs['handcount_' + key].textContent = '🂠 ' + actor.hand.length;
-    const counts = '牌库 ' + actor.deck.length + ' · 弃牌堆 ' + actor.discardPile.length +
+    const counts = '⚡ ' + spTxt + ' · 攻 ' + actor.attack + ' · 防 ' + actor.defense +
+      '　｜　牌库 ' + actor.deck.length + ' · 弃牌堆 ' + actor.discardPile.length +
       (actor.discardUsedThisTurn ? ' · 已弃牌换AP' : '');
     refs['meta_' + key].textContent = counts;
   }
@@ -335,9 +380,10 @@
     }
     const html = actor.items.map(function (item, i) {
       const d = Characters.ITEM_DEFS[item.defId];
+      const art = d.art ? '<img class="item-art" src="' + esc(d.art) + '" alt="">' : '';
       return '<div class="item-chip' + (blocked ? ' blocked' : '') + '" data-index="' + i + '" title="' +
         esc(d.desc + (blocked ? '（狗粉丝围攻：禁用道具）' : '（使用后立即结束回合）')) + '">' +
-        '<span class="item-icon">' + d.icon + '</span>' +
+        art +
         '<span class="item-name">' + esc(d.name) + '</span></div>';
     }).join('');
     refs.itemRow.innerHTML = html;
@@ -509,6 +555,12 @@
     refs.goEmoji.textContent = win ? '🎉' : '💀';
     refs.goTitle.textContent = win ? '胜利！' : '失败';
     refs.goDesc.textContent = winner.name + '获胜！' + loser.name + ' HP 归零。';
+    // v2.1 美术重制：结算背景切换为 胜利/失败 美术图
+    const art = refs.gameOver ? refs.gameOver.querySelector('.go-art') : null;
+    if (art) {
+      art.classList.toggle('art-win', win);
+      art.classList.toggle('art-lose', !win);
+    }
     refs.gameOver.classList.remove('hidden');
     sound.play(win ? 'win' : 'lose');
   }
@@ -793,6 +845,17 @@
   UI.sound = sound;
   UI.esc = esc;
   UI.cardHtml = cardHtml;
+
+  // v2.1 美术重制：切换战斗底图（自由对战=战斗大厅，故事=对应关卡场景）
+  UI.setBattleBg = function (src) {
+    const el = $('battle-bg');
+    if (!el) return;
+    if (src) {
+      el.style.backgroundImage = 'url("' + src + '")';
+    } else {
+      el.style.backgroundImage = '';
+    }
+  };
 
   global.UI = UI;
 })(window);
