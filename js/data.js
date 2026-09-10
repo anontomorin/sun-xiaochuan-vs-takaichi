@@ -31,15 +31,15 @@
 
   // 被动定义
   S.PASSIVES = {
-    bushidou: { id: 'bushidou', name: '军国不再的武士道', icon: '⚔️', art: 'assets/img/art/icons/passive_bushidou.png',
+    bushidou: { id: 'bushidou', name: '军国不再的武士道', icon: '⚔️', art: 'assets/img/art/icons/passive_bushidou.webp',
       desc: '每 2 个战斗回合：攻击力 +5%（向上取整，本场内叠加）。' },
-    shouwa_voice: { id: 'shouwa_voice', name: '昭和的声音', icon: '📻', art: 'assets/img/art/icons/passive_showa.png',
+    shouwa_voice: { id: 'shouwa_voice', name: '昭和的声音', icon: '📻', art: 'assets/img/art/icons/passive_showa.webp',
       desc: '每 2 个战斗回合：获得 1 张【昭和】卡（1AP，攻击力+50% 持续 2 回合）。' },
-    cheap_pot: { id: 'cheap_pot', name: '廉价小锅', icon: '🍲', art: 'assets/img/art/icons/passive_pot.png',
+    cheap_pot: { id: 'cheap_pot', name: '廉价小锅', icon: '🍲', art: 'assets/img/art/icons/passive_pot.webp',
       desc: '每回合开始：AP +1、HP +20。' },
-    gun: { id: 'gun', name: '日服男枪', icon: '🔫', art: 'assets/img/art/icons/passive_gun.png',
+    gun: { id: 'gun', name: '日服男枪', icon: '🔫', art: 'assets/img/art/icons/passive_gun.webp',
       desc: '每回合对敌人额外造成 10 点伤害，并有 5% 概率直接秒杀。' },
-    naihuo: { id: 'naihuo', name: '耐活王', icon: '🧱', art: 'assets/img/art/icons/passive_turtle.png',
+    naihuo: { id: 'naihuo', name: '耐活王', icon: '🧱', art: 'assets/img/art/icons/passive_turtle.webp',
       desc: '每 2 个战斗回合：防御力 +10%（向上取整，本场内叠加）。' }
   };
 
@@ -121,11 +121,11 @@
       id: 4, type: 'boss', title: 'Boss：东条英机', scene: '东京审判遗址废墟',
       bg: '断壁残垣间，一个军装残影矗立。',
       name: '东条英机', emoji: '🥸', tag: '招核残影·战争执念体',
-      enemy: { hp: 350, atk: 40, def: 25, speed: 32 },
+      enemy: { hp: 290, atk: 35, def: 17, speed: 30 },
       skills: [
-        { name: '玉碎冲锋', cost: 2, kind: 'attack', mult: 1.8, text: '帝国军人，宁死不退！' },
+        { name: '玉碎冲锋', cost: 2, kind: 'attack', mult: 1.52, text: '帝国军人，宁死不退！' },
         { name: '军令如山', cost: 1, kind: 'buff_def', dur: 2, text: '听令！防御阵型！' },
-        { name: '帝国残影', cost: 1, kind: 'heal_buff', ratio: 0.12, dur: 2, text: '帝国的残影，不会消亡……' }
+        { name: '帝国残影', cost: 1, kind: 'heal_buff', ratio: 0.08, dur: 2, text: '帝国的残影，不会消亡……' }
       ],
       pre: [
         ['enemy', '帝国不会亡……大东亚共荣是正义伟业……'],

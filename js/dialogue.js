@@ -63,7 +63,7 @@
     if (!text) return null;
     for (let i = 0; i < SCENE_BG.length; i++) {
       if (text.indexOf(SCENE_BG[i][0]) >= 0) {
-        return 'assets/img/art/bg/' + SCENE_BG[i][1] + '.png';
+        return 'assets/img/art/bg/' + SCENE_BG[i][1] + '.webp';
       }
     }
     return null;
@@ -257,8 +257,8 @@
       // v2.1 美术重制：默认说话人立绘 = 本地美术资源；调用方可覆盖
       const portraits = Object.assign(
         {
-          sun: 'assets/img/art/characters/sun.png',
-          sys: 'assets/img/art/characters/sys.png'
+          sun: 'assets/img/art/characters/sun.webp',
+          sys: 'assets/img/art/characters/sys.webp'
         },
         (current.opts && current.opts.portraits) || {}
       );

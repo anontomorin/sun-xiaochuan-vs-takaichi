@@ -71,7 +71,7 @@
     if (!selectedCharId) { UI.toast('请先选择角色'); return; }
     // v2.1 美术重制：自由对战使用战斗大厅底图
     if (typeof UI.setBattleBg === 'function') {
-      UI.setBattleBg('assets/img/art/ui/battle_bg.png');
+      UI.setBattleBg('assets/img/art/ui/battle_bg.webp');
     }
     UI.showBattleScreen();
     Game.restart();

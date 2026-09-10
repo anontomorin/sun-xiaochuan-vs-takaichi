@@ -18,14 +18,14 @@
   // ---------------- v2.1 美术重制 ----------------
   // 战斗关卡 → 关卡场景底图（bg_01..bg_16 为对应剧情场景美术）
   const STAGE_BG = {
-    1: 'assets/img/art/bg/bg_05.png',   // 第一关·老东京街道
-    2: 'assets/img/art/bg/bg_06.png',   // 第二关·昭和旧街区
-    4: 'assets/img/art/bg/bg_08.png',   // Boss·东京审判遗址
-    5: 'assets/img/art/bg/bg_09.png',   // 第五关·居酒屋
-    6: 'assets/img/art/bg/bg_10.png',   // 第六关·深夜办公室
-    8: 'assets/img/art/bg/bg_12.png',   // Boss·奈良街道
-    9: 'assets/img/art/bg/bg_13.png',   // 第九关·网吧包间
-    11: 'assets/img/art/bg/bg_15.png'   // 最终Boss·国会屋顶
+    1: 'assets/img/art/bg/bg_05.webp',   // 第一关·老东京街道
+    2: 'assets/img/art/bg/bg_06.webp',   // 第二关·昭和旧街区
+    4: 'assets/img/art/bg/bg_08.webp',   // Boss·东京审判遗址
+    5: 'assets/img/art/bg/bg_09.webp',   // 第五关·居酒屋
+    6: 'assets/img/art/bg/bg_10.webp',   // 第六关·深夜办公室
+    8: 'assets/img/art/bg/bg_12.webp',   // Boss·奈良街道
+    9: 'assets/img/art/bg/bg_13.webp',   // 第九关·网吧包间
+    11: 'assets/img/art/bg/bg_15.webp'   // 最终Boss·国会屋顶
   };
   // 战斗关卡 → 敌人立绘（e1/e2/e5/e6/e9 普通，eb1/eb2/eb3 Boss）
   const ENEMY_ART = {
@@ -33,9 +33,9 @@
   };
   function enemyArtOf(stage) {
     const f = ENEMY_ART[stage && stage.id];
-    return f ? 'assets/img/art/enemies/' + f + '.png' : null;
+    return f ? 'assets/img/art/enemies/' + f + '.webp' : null;
   }
-  // 故事地图：11 个节点沿美术底图 story_map.png 的发光道路放置
+  // 故事地图：11 个节点沿美术底图 story_map.webp 的发光道路放置
   // （道路从左下「出租屋」蜿蜒至右上「宝塔」，坐标为像素检测得到的灯盏质心）
   const MAP_NODE_POS = [
     [22, 80], [33, 73], [43, 63], [50, 54], [57, 49], [64, 44],
@@ -153,8 +153,9 @@
     reader.readAsText(file);
   }
 
-  function speech(who, text) {
+  function speech(text) {
     // 战斗中敌方/系统台词反馈（尽量沉浸）
+    if (!text) return;
     const v = G.visual;
     if (v && typeof v.toast === 'function') {
       try { v.toast({ text: '💬 ' + text }); } catch (e) { /* ignore */ }
@@ -348,9 +349,9 @@
 
   // 说话人 → 立绘映射（高市早苗仅在最终战以“enemy”出现）
   function portraitsFor(stage) {
-    const m = { sun: Characters.CHARACTERS.sun_xiaochuan.art || 'assets/img/art/characters/sun.png' };
+    const m = { sun: Characters.CHARACTERS.sun_xiaochuan.art || 'assets/img/art/characters/sun.webp' };
     if (stage && (stage.id === 11 || stage.name === '高市早苗')) {
-      m.enemy = Characters.CHARACTERS.takaichi_sanae.art || 'assets/img/art/characters/sanae.png';
+      m.enemy = Characters.CHARACTERS.takaichi_sanae.art || 'assets/img/art/characters/sanae.webp';
     } else {
       const ea = enemyArtOf(stage);
       if (ea) m.enemy = ea;
@@ -398,7 +399,7 @@
     G.state.storyStageTitle = stage.title;
     // v2.1 美术重制：按关卡切换战斗底图
     if (global.UI && typeof UI.setBattleBg === 'function') {
-      UI.setBattleBg(STAGE_BG[stage.id] || 'assets/img/art/ui/battle_bg.png');
+      UI.setBattleBg(STAGE_BG[stage.id] || 'assets/img/art/ui/battle_bg.webp');
     }
     UI.showBattleScreen();
     G.startStoryBattle(profileOf(), enemyView(stage));
@@ -785,6 +786,7 @@
   }
 
   function showEndingScreen(archived) {
+    hideMainScreens();
     clearView();
     viewEl.innerHTML =
       '<div class="st-end"><button class="st-back">⌂ 返回主菜单</button>' +

@@ -298,9 +298,9 @@
         // 脸部中心（图纵坐标 %）→ background-position y（图高 150% 时 上裁=3×(fc-18.7)%）
         const fname = String(artSrc).split('/').pop();
         const ZONE_FACE = {
-          'sun.png': 26, 'sanae.png': 30,           // 角色半身立绘：脸中上
-          'e1.png': 38, 'e2.png': 34, 'e5.png': 34, 'e6.png': 34, 'e9.png': 34,
-          'eb1.png': 34, 'eb2.png': 34, 'eb3.png': 34 // 敌人：头部整体偏下
+          'sun.webp': 26, 'sanae.webp': 30,           // 角色半身立绘：脸中上
+          'e1.webp': 38, 'e2.webp': 34, 'e5.webp': 34, 'e6.webp': 34, 'e9.webp': 34,
+          'eb1.webp': 34, 'eb2.webp': 34, 'eb3.webp': 34 // 敌人：头部整体偏下
         };
         const fc = ZONE_FACE[fname] != null ? ZONE_FACE[fname] : 30;
         const pos = Math.max(0, Math.min(100, (fc - 18.7) * 3)).toFixed(1);
